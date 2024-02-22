@@ -1,4 +1,16 @@
 import numpy as np
+import argparse
+
+def get_arguments():
+    parser=argparse.ArgumentParser()
+    #Adds essential information as arguments
+    #gets filename from command line
+    parser.add_argument("filename", nargs=1, action='store')
+
+    args=parser.parse_args()
+    return args
+    #args is the entire namespace
+    
 
 def read_xyz(filename):
     """ Read in an xyz file.  Returns a list of the atom column and 
@@ -125,7 +137,9 @@ def align_xyz(filename, output_filename):
     write_xyz(output_filename, atom_col, rotated_coords)
 
 def main():
-    align_xyz("example.xyz", "aligned.xyz") 
+    args=get_arguments()
+    output_filename= "output.xyz"
+    align_xyz(args.filename[0], output_filename) 
 
 if __name__ == "__main__":
     main()
