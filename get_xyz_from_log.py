@@ -120,7 +120,7 @@ def get_index_of_lowest_energy(args, string_to_match):
     print(lowest_energy_kJ, "kJ/mol")
     return lowest_energy_index
 
-def get_coordinates_of_specific_index(args, specific_index):
+def get_coordinates_of_lowest_energy(args, lowest_energy_index):
     filename=args.filename[0]
     sets_of_coords=()
     with open(filename, 'r') as f:
@@ -133,11 +133,16 @@ def get_coordinates_of_specific_index(args, specific_index):
             coordinates="\n".join(paragraph_by_line)
             sets_of_coords=sets_of_coords+(coordinates,)
 #takes all the sets of coordinates that are in the correct format
-    specific_coordinates=sets_of_coords[(specific_index*3-2)]
+    if (lowest_energy_index*3-2) > len(sets_of_coords):
+        lowest_energy_coordinates= sets_of_coords[lowest_energy_index]
+# checks to see if the sets_of_coords grabbed only the correctly formatted sets of coordinates
+# sometimes it grabs extra coordinates that are not correct, which the formula index*3-2 corrects for
+    elif (lowest_energy_index*3-2) < len(sets_of_coords):
+        lowest_energy_coordinates=sets_of_coords[(lowest_energy_index*3-2)]
 #weird formula that must be used as there are 3 sets of coordinates in the correct format that will be added per iteration done by Gaussian
 #we want the first one in the set of 3, so we multiply the index by 3 to get to the correctly group of coordinate sets
 #we subtract by 2 because the 1st set of coords in that group of 3 is in the format we want
-    return specific_coordinates
+    return lowest_energy_coordinates
 
 #The following two functions are for both 9999 errors and normal termination 
 
@@ -194,8 +199,8 @@ def main():
         turn_coordinates_to_file(last_coordinates, xyz_filename)
     elif termination_status == "error_9999":
         lowest_energy_index=get_index_of_lowest_energy(args, string_to_match)
-        specific_coordinates=get_coordinates_of_specific_index(args, lowest_energy_index)
-        turn_coordinates_to_file(specific_coordinates)
+        lowest_energy_coordinates=get_coordinates_of_lowest_energy(args, lowest_energy_index)
+        turn_coordinates_to_file(lowest_energy_coordinates, xyz_filename)
     else:
         print("Unknown error or file is still running")
         
