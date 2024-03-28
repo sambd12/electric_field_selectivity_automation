@@ -33,7 +33,7 @@ def get_termination_status(args):
             elif re.search(" Error termination request processed by link l103", line):
                 print(line)
 
-def get_filename(args, termination_status):
+def get_xyz_filename(args, termination_status):
     log_filename=args.filename[0]
     name=log_filename.split('.')[0] 
     if termination_status == "normal":
@@ -189,7 +189,7 @@ def main():
     #determine how to proceed, get the appropriate name, and the density functional
     
     termination_status=get_termination_status(args)
-    xyz_filename=get_filename(args, termination_status)
+    xyz_filename=get_xyz_filename(args, termination_status)
     string_to_match=get_density_function(args)
     
     #Functions depending on how the script proceeeds
