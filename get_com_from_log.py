@@ -21,7 +21,7 @@ def get_arguments():
     parser.add_argument("field_strength", choices=["n4", "n3", "n2", "n1", 'nofield', 'p1', 'p2', 'p3', 'p4'], nargs=1, action="store")
     #gets solvent from command line
     parser.add_argument("solvent", choices=["acn", "dcm"], nargs=1, action='store')
-    parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz"], default="+", nargs="?", action="store")
+    parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz"], nargs=1, action="store")
     
     group = parser.add_mutually_exclusive_group(required=False)
     #changes the regular minimization to a single point calculation
@@ -79,12 +79,13 @@ def get_solvent(args, options):
 def get_basis_set(args, options):
     if args.basis_set == ['+']:
         options['basis_set'] = "6-311+g(d,p)"
-    if args.basis_set == ['++']:
+    elif args.basis_set == ['++']:
         options['basis_set'] = "6-311++g(d,p)"
-    if args.basis_set == ['pvdz']:
+    elif args.basis_set == ['pvdz']:
             options['basis_set'] = "AUG-cc-pVDZ"  
-    if args.basis_set == ['pvtz']:
-            options['basis_set'] = "AUG-cc-pVTZ"  
+    elif args.basis_set == ['pvtz']:
+            options['basis_set'] = "AUG-cc-pVTZ"
+    return options
 
 def get_termination_status(args):
     filename=args.filename[0]
