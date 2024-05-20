@@ -169,6 +169,10 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
            each_line[0]= "O"
        if each_line[0] == "9":
            each_line[0]= "F"
+       if each_line[0] == "13":
+           each_line[0] = "Al"
+       if each_line[0] == "17":
+           each_line[0] = "Cl"
 #put the atoms back together, adding each atom line as a string to a tuple
        each_line=" ".join(each_line)
        clean_file= clean_file + (each_line,)

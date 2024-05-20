@@ -21,6 +21,7 @@ def get_arguments():
     parser.add_argument("field_strength", choices=["n4", "n3", "n2", "n1", 'nofield', 'p1', 'p2', 'p3', 'p4'], nargs=1, action="store")
     #gets solvent from command line
     parser.add_argument("solvent", choices=["acn", "dcm"], nargs=1, action='store')
+    parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz"], default="+", nargs="?", action="store")
     
     group = parser.add_mutually_exclusive_group(required=False)
     #changes the regular minimization to a single point calculation
@@ -35,9 +36,11 @@ def get_arguments():
 #density functional options
 def get_density_functional(args, options):
     if args.density_functional.__contains__('b3lyp'):
-        options['density_functional'] = "B3LYP/6-311+g(d,p) EmpiricalDispersion=GD3"
+        options['density_functional'] = "B3LYP"
+        options['empirical_dispersion'] = "EmpiricalDispersion=GD3"
     elif args.density_functional.__contains__('mn15'):
-        options['density_functional'] = "MN15/6-311+g(d,p)"
+        options['density_functional'] = "MN15"
+        options['empirical_dispersion'] = ""
     return options
 
     
@@ -72,6 +75,16 @@ def get_solvent(args, options):
     else:
         print("Unrecognized solvent")
     return options
+
+def get_basis_set(args, options):
+    if args.basis_set == ['+']:
+        options['basis_set'] = "6-311+g(d,p)"
+    if args.basis_set == ['++']:
+        options['basis_set'] = "6-311++g(d,p)"
+    if args.basis_set == ['pvdz']:
+            options['basis_set'] = "AUG-cc-pVDZ"  
+    if args.basis_set == ['pvtz']:
+            options['basis_set'] = "AUG-cc-pVTZ"  
 
 def get_termination_status(args):
     filename=args.filename[0]
@@ -222,6 +235,11 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
            each_line[0]= "O"
        if each_line[0] == "9":
            each_line[0]= "F"
+       if each_line[0] == "13":
+           each_line[0] = "Al"
+       if each_line[0] == "17":
+           each_line[0] = "Cl"           
+           
 #put the atoms back together, adding each atom line as a string to a tuple
        each_line=" ".join(each_line)
        clean_file= clean_file + (each_line,)
@@ -252,79 +270,89 @@ def get_dotcom_filename(args, options, filename_options):
     filename=args.filename[0]
     #gets product/reactant, ketone/aldehyde, enantiomer, and long/short arm parameters from the old file name
     if filename.__contains__("product"):
-        filename_options['molecule_type'] = "product"
+        filename_options['molecule_type'] = "_product"
     elif filename.__contains__("reactant"):
-        filename_options['molecule_type'] = "reactant"
+        filename_options['molecule_type'] = "_reactant"
     else:   
-        filename_options['molecule_type'] = "qst3"
+        filename_options['molecule_type'] = "_qst3"
    
     ## adds aldehyde and ketone to the name of the file
     ## in the case of QST3 files, adds aldehyde and ketone to the file    
     if filename.__contains__("ketone"):
-        filename_options['pathway'] = "ketone"
+        filename_options['pathway'] = "_ketone"
         options['product_type'] = "Ketone"
     elif filename.__contains__("aldehyde"):
-        filename_options['pathway'] = "aldehyde"
+        filename_options['pathway'] = "_aldehyde"
         options['product_type'] = "Aldehyde"
     else:
         filename_options['pathway'] = ""
         
     if filename.__contains__("_s_"):
-        filename_options['enantiomer'] = "s"
+        filename_options['enantiomer'] = "_s"
     elif filename.__contains__("_r_"):
-        filename_options['enantiomer'] = "r"
+        filename_options['enantiomer'] = "_r"
     else:
         filename_options['enantiomer'] = ""
         
     if filename.__contains__("_longarm_"):
-        filename_options['reactant_type'] = "longarm"
+        filename_options['reactant_type'] = "_longarm"
     elif filename.__contains__("_shortarm_"):
-        filename_options['reactant_type'] = "shortarm"
+        filename_options['reactant_type'] = "_shortarm"
     else:
         filename_options['reactant_type'] = ""
 
 #gets the density functional, solvent, and field strength options from the command line
     if args.density_functional == ['b3lyp']:
-        filename_options['density_functional'] = 'b3lyp'
+        filename_options['density_functional'] = '_b3lyp'
     elif args.density_functional == ['mn15']:
-        filename_options['density_functional'] = 'mn15'
+        filename_options['density_functional'] = '_mn15'
     
     if args.solvent == ['acn']:
-        filename_options['solvent'] = 'acn'
+        filename_options['solvent'] = '_acn'
     elif args.solvent == ['dcm']:
-        filename_options['solvent'] = 'dcm'
+        filename_options['solvent'] = '_dcm'
+        
+        
+    if args.basis_set == ['+']:
+        filename_options['basis_set'] = ""
+    if args.basis_set == ['++']:
+        filename_options['basis_set'] = "_++"
+    if args.basis_set == ['pvdz']:
+        filename_options['basis_set'] = "_pVDZ"  
+    if args.basis_set == ['pvtz']:
+        filename_options['basis_set'] = "_pVTZ"  
     
     if args.field_strength == ['n4']:
-        filename_options['field_strength'] = "neg4"
+        filename_options['field_strength'] = "_neg4"
     elif args.field_strength == ['n3']:
-        filename_options['field_strength'] = "neg3"
+        filename_options['field_strength'] = "_neg3"
     elif args.field_strength == ['n2']:
-        filename_options['field_strength'] = "neg2"
+        filename_options['field_strength'] = "_neg2"
     elif args.field_strength == ['n1']:
-        filename_options['field_strength'] = "neg1"
+        filename_options['field_strength'] = "_neg1"
     elif args.field_strength == ['nofield']:
-        filename_options['field_strength'] = "nofield"
+        filename_options['field_strength'] = "_nofield"
     elif args.field_strength == ['p1']:
-        filename_options['field_strength'] = "pos1"
+        filename_options['field_strength'] = "_pos1"
     elif args.field_strength == ['p2']:
-        filename_options['field_strength'] = "pos2"
+        filename_options['field_strength'] = "_pos2"
     elif args.field_strength == ['p3']:
-        filename_options['field_strength'] = "pos3"
+        filename_options['field_strength'] = "_pos3"
     elif args.field_strength == ['p4']:
-        filename_options['field_strength'] = "pos4"
+        filename_options['field_strength'] = "_pos4"
     return filename_options
 
 def get_dot_com(args, options, filename_options):
     #JUST reactant or product
     if args.spc == False and args.qst3 == None:
-        syntax="%mem=24GB\n%NProcShared=32\n#n opt=Z-Matrix NoSymm {density_functional} {field_strength} {solvent}\n\n {filename}\n\n{coordinates}\n".format_map(options)
-        completed_filename=("cis-stilbene_oxide_{molecule_type}_{density_functional}_{solvent}_{pathway}_{enantiomer}_{reactant_type}_{field_strength}.com").format_map(filename_options)
+        syntax="%mem=24GB\n%NProcShared=32\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\n {filename}\n\n{coordinates}\n".format_map(options)
+        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
     elif args.spc == True:
-        syntax="%mem=24GB\n%NProcShared=32\n#n NoSymm {density_functional} {field_strength} {solvent} Polar\n\n {filename}\n\n{coordinates}\n".format_map(options)
-        completed_filename=("cis-stilbene_oxide_{molecule_type}_{density_functional}_{solvent}_{pathway}_{enantiomer}_{reactant_type}_{field_strength}_spc.com").format_map(filename_options)
+        syntax="%mem=24GB\n%NProcShared=32\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Polar\n\n {filename}\n\n{coordinates}\n".format_map(options)
+        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc.com").format_map(filename_options)
     elif args.qst3 != None:
-        syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3) NoSymm {density_functional} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
-        completed_filename=("cis-stilbene_oxide_qst3_{density_functional}_{solvent}_{pathway}_{enantiomer}_{reactant_type}_{field_strength}.com").format_map(filename_options)
+        syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
+        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
     with open(completed_filename, 'w') as f:
         f.write(syntax)
 
@@ -478,6 +506,7 @@ def aligned_to_com(aligned_filename, args):
     get_density_functional(args, options)
     get_field_strength(args, options)
     get_solvent(args, options)
+    get_basis_set(args, options)
     
     if args.qst3 == None:
         filename = aligned_filename
