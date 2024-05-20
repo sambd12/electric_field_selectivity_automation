@@ -533,7 +533,6 @@ def aligned_to_com(aligned_filename, args):
 def main():
     args=get_arguments()
     filename=args.filename[0]
-    print(filename)
     #notation for getting one specific argument is args.argument/option
     if filename.__contains__(".log"):
         xyz_filename = log_to_xyz(args)
