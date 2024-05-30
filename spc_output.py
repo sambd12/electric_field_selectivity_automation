@@ -15,9 +15,11 @@ def get_arguments():
     #gets filename from command line
     parser.add_argument("filename", nargs=1, action='store')
     #gets density functional from command line
-    parser.add_argument("density_functional", choices=["b3lyp", "mn15"], nargs=1, action="store")
+    parser.add_argument("density_functional", choices=["b3lyp", "mn15", 'b2plyp'], nargs=1, action="store")
     #gets field stength from command line
-    parser.add_argument("-p", "--polar", action="store_true")
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("-p", "--polar", action="store_true")
+    group.add_argument("-f", '--freq', action="store_true")
     args=parser.parse_args()
     return args
 
@@ -33,6 +35,8 @@ def get_density_function(args):
        string_to_match="RMN15"
     elif density_functional.__contains__("b3lyp"):
        string_to_match="RB3LYP"
+    elif density_functional.__contains__("b2plyp"):
+        string_to_match="RB2PLYP"
     else:
        print("enter a valid density function")
     return string_to_match
@@ -72,9 +76,15 @@ def get_last_coordinates(args):
     with open(filename, 'r') as f:
         file_string=f.read()      
     split_file=file_string.split("---------------------------------------------------------------------")
+
     if args.polar == True:
-        last_coordinates=split_file[4]
-    elif args.polar == False:
+        last_coordinates=split_file[6]
+## you may need to adjust the number from 6 to 4 if your comment line/name of your xyz file is short. 
+## The log file has a section for the comment to go, and it is bordered by ----- on either side, matching the length of the comment
+## if your comment is long enough, it adds 2 other spots to split the file. 
+    elif args.freq == True:
+        last_coordinates=split_file[8]
+    elif args.polar == False and args.freq == False:
         last_coordinates=split_file[-4]
     return last_coordinates
 
@@ -116,6 +126,7 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
 #joins all the tuples to be one string
     file_xyzstring=str(complete_file)
 #writes file as .xyz
+    print(xyz_filename)
     with open(xyz_filename, 'w') as f:
         f.write(file_xyzstring)
 

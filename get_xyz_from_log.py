@@ -15,8 +15,9 @@ def get_arguments():
     #gets filename from command line
     parser.add_argument("filename", nargs=1, action='store')
     #gets density functional from command line
-    parser.add_argument("density_functional", choices=["b3lyp", "mn15"], nargs=1, action="store")
+    parser.add_argument("density_functional", choices=["b3lyp", "mn15", "b2plyp"], nargs=1, action="store")
     #gets field stength from command line
+    parser.add_argument("-f", "--freq", action="store_true")
     args=parser.parse_args()
     return args
 
@@ -48,6 +49,8 @@ def get_density_function(args):
        string_to_match="RMN15"
     elif density_functional.__contains__("b3lyp"):
        string_to_match="RB3LYP"
+    elif density_functional.__contains__("b2plyp"):
+        string_to_match="RB2PLYP"
     else:
        print("enter a valid density function")
     return string_to_match
@@ -61,6 +64,9 @@ def get_energy_of_last_structure(args, string_to_match):
     	for line in f:
     		if re.search(string_to_match, line):
     			matches.append(line)			
+    if args.freq == True:
+        del matches[-5:-1]
+        del matches[-1]
 #match the density functional I found to the lines that contain the structure energies 
     just_energies=()
     for line in matches:
@@ -87,7 +93,12 @@ def get_last_coordinates(args):
     with open(filename, 'r') as f:
         file_string=f.read()      
     split_file=file_string.split("---------------------------------------------------------------------")
-    last_coordinates=split_file[-2]
+    if args.freq == False:
+        last_coordinates=split_file[-2]
+    elif args.freq == True: 
+        last_coordinates=split_file[-12]
+## frequency files take the lowest energy set of coordinates and perform a frequency calculation, 
+## so the set of coordinates is buried deep in the file
     return last_coordinates
 
 #The following two functions are for 9999 errors only
@@ -100,6 +111,10 @@ def get_index_of_lowest_energy(args, string_to_match):
     		if re.search(string_to_match, line):
     			matches.append(line)
 #match the density functional I found to the lines that contain the structure energies 
+    if args.freq == True:
+        del matches[-5:-1]
+        del matches[-1]
+## freq adds some redundant calculations at the end, which end up matching things, so we want to eliminate those extra matches
     just_energies=()
     for line in matches:
             each_line=line.split()
@@ -183,6 +198,7 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
 #joins all the tuples to be one string
     file_xyzstring=str(complete_file)
 #writes file as .xyz
+    print(xyz_filename)
     with open(xyz_filename, 'w') as f:
         f.write(file_xyzstring)
 

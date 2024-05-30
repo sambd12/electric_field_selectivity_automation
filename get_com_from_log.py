@@ -16,7 +16,7 @@ def get_arguments():
     #gets filename from command line
     parser.add_argument("filename", nargs=1, action='store')
     #gets density functional from command line
-    parser.add_argument("density_functional", choices=["b3lyp", "mn15"], nargs=1, action="store")
+    parser.add_argument("density_functional", choices=["b3lyp", "mn15", "b2plypd3", "b2plyp"], nargs=1, action="store")
     #gets field stength from command line
     parser.add_argument("field_strength", choices=["n4", "n3", "n2", "n1", 'nofield', 'p1', 'p2', 'p3', 'p4'], nargs=1, action="store")
     #gets solvent from command line
@@ -28,6 +28,9 @@ def get_arguments():
     group.add_argument("-s", "--spc", action="store_true")
     #adds the option to make the output file QST3, in which case we want to get the names of the other two files being used
     group.add_argument("-q", "--qst3", nargs=2, action='store')
+    
+    parser.add_argument("-f", "--freq", action="store_true")
+    #adds the option to include frequency calculations, which factor entropy into the free energy calculations
 
     args=parser.parse_args()
     return args
@@ -40,6 +43,12 @@ def get_density_functional(args, options):
         options['empirical_dispersion'] = "EmpiricalDispersion=GD3"
     elif args.density_functional.__contains__('mn15'):
         options['density_functional'] = "MN15"
+        options['empirical_dispersion'] = ""
+    elif args.density_functional.__contains__('b2plypd3'):
+        options['density_functional'] = "B2PLYPD3"
+        options['empirical_dispersion'] = ""
+    elif args.density_functional.__contains__('b2plyp'):
+        options['density_functional'] = "B2PLYP"
         options['empirical_dispersion'] = ""
     return options
 
@@ -346,14 +355,27 @@ def get_dotcom_filename(args, options, filename_options):
 def get_dot_com(args, options, filename_options):
     #JUST reactant or product
     if args.spc == False and args.qst3 == None:
-        syntax="%mem=24GB\n%NProcShared=32\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\n {filename}\n\n{coordinates}\n".format_map(options)
-        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
+        if args.freq == False:
+            syntax="%mem=24GB\n%NProcShared=32\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\n {filename}\n\n{coordinates}\n".format_map(options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
+        elif args.freq == True:
+            syntax="%mem=24GB\n%NProcShared=32\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\n {filename}\n\n{coordinates}\n".format_map(options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_freq.com").format_map(filename_options)        
     elif args.spc == True:
-        syntax="%mem=24GB\n%NProcShared=32\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Polar\n\n {filename}\n\n{coordinates}\n".format_map(options)
-        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc.com").format_map(filename_options)
+        if args.freq == False:
+            syntax="%mem=24GB\n%NProcShared=32\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Polar\n\n {filename}\n\n{coordinates}\n".format_map(options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_polar.com").format_map(filename_options)
+        elif args.freq == True:
+            syntax="%mem=24GB\n%NProcShared=32\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\n {filename}\n\n{coordinates}\n".format_map(options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_freq.com").format_map(filename_options)
     elif args.qst3 != None:
-        syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
-        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
+        if args.freq == False:
+            syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
+        elif args.freq == True:
+            syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_freq.com").format_map(filename_options)
+    print(completed_filename)     
     with open(completed_filename, 'w') as f:
         f.write(syntax)
 
