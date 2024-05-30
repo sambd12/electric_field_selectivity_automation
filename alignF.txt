@@ -1,0 +1,27 @@
+#!/usr/bin/tclsh
+
+set sel [atomselect top all]
+set B [atomselect top "index 0"]
+set Bx [$B get x]
+set mBx [expr {$Bx * -1}]
+set By [$B get y]
+set mBy [expr {$By * -1}]
+set Bz [$B get z]
+set mBz [expr {$Bz * -1}]
+set origin [list $mBx $mBy $mBz]
+$sel moveby $origin
+
+set sel [atomselect top all]
+set O [atomselect top "index 1"]
+set Ox [$O get x]
+set Oy [$O get y]
+set Oz [$O get z]
+set zaxis [list $Ox $Oy $Oz]
+$sel move [transvecinv $zaxis]
+$sel move [transaxis y -90]
+
+set F [atomselect top "index 2"]
+set Fx [$F get x]
+set Fy [$F get y]
+set angle [expr {-1 * atan2($Fy, $Fx)}]
+$sel move [transaxis z $angle rad]
