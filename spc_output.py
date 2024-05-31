@@ -17,9 +17,8 @@ def get_arguments():
     #gets density functional from command line
     parser.add_argument("density_functional", choices=["b3lyp", "mn15", 'b2plyp'], nargs=1, action="store")
     #gets field stength from command line
-    group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument("-p", "--polar", action="store_true")
-    group.add_argument("-f", '--freq', action="store_true")
+    parser.add_argument("-p", "--polar", action="store_true")
+    parser.add_argument("-f", '--freq', action="store_true")
     args=parser.parse_args()
     return args
 
@@ -66,7 +65,7 @@ def get_energy_of_last_structure(args, string_to_match):
 #grab the last energy
     kilojoules_energy=(lowest_energy*2625.5)
 #convert the energy to kJ/mol
-    print(kilojoules_energy, "kJ/mol")
+    print("The energy of your structure is", kilojoules_energy, "kJ/mol")
 
 def get_last_coordinates(args):
     filename=args.filename[0]
@@ -126,9 +125,23 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
 #joins all the tuples to be one string
     file_xyzstring=str(complete_file)
 #writes file as .xyz
-    print(xyz_filename)
+    print("Structure coordinates:", xyz_filename)
     with open(xyz_filename, 'w') as f:
         f.write(file_xyzstring)
+        
+def get_free_energy(args):
+    filename=args.filename[0]
+    string_to_match="Sum of electronic and thermal Free Energies="
+    matches = []
+    with open(filename) as f:
+    	for line in f:
+    		if re.search(string_to_match, line):
+    			matches.append(line)
+    for line in matches:
+            free_energy_line=line.split()
+            free_energy=float(free_energy_line[-1])
+            free_energy_kJ=(free_energy*2625.5)
+            print("The Free Energy of your structure is", free_energy_kJ, "kJ/mol")
 
 def get_z_dipole(args):
     filename=args.filename[0]
@@ -185,6 +198,12 @@ def main():
     get_energy_of_last_structure(args, string_to_match)
     last_coordinates=get_last_coordinates(args)
     turn_coordinates_to_file(last_coordinates, xyz_filename)
+    if args.freq == True:
+        get_free_energy(args)
+        z_dipole=get_z_dipole(args)
+        zz_polarizability=get_z_polar(args)
+        print("The z dipole moment is", z_dipole, 'atomic units.')
+        print("The zz polarizability is", zz_polarizability, 'atomic units.')
     if args.polar == True:
         z_dipole=get_z_dipole(args)
         zz_polarizability=get_z_polar(args)

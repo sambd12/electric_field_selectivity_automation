@@ -124,6 +124,8 @@ def get_density_function(args):
        string_to_match="RMN15"
     elif density_functional.__contains__("b3lyp"):
        string_to_match="RB3LYP"
+    elif density_functional.__contains__("b2plyp"):
+           string_to_match="RB2PLYP"
     else:
        print("enter a valid density function")
     return string_to_match
@@ -137,6 +139,10 @@ def get_energy_of_last_structure(args, string_to_match):
     	for line in f:
     		if re.search(string_to_match, line):
     			matches.append(line)			
+    if args.freq == True:
+        del matches[-5:-1]
+        del matches[-1]
+## freq adds some redundant calculations at the end, which end up matching things, so we want to eliminate those extra matches
 #match the density functional I found to the lines that contain the structure energies 
     just_energies=()
     for line in matches:
@@ -153,7 +159,7 @@ def get_energy_of_last_structure(args, string_to_match):
 #grab the last energy
     kilojoules_energy=(lowest_energy*2625.5)
 #convert the energy to kJ/mol
-    print(kilojoules_energy, "kJ/mol")
+    print("The energy of your structure is", kilojoules_energy, "kJ/mol")
 
 def get_last_coordinates(args):
     filename=args.filename[0]
@@ -163,7 +169,12 @@ def get_last_coordinates(args):
     with open(filename, 'r') as f:
         file_string=f.read()      
     split_file=file_string.split("---------------------------------------------------------------------")
-    last_coordinates=split_file[-2]
+    if args.freq == False:
+            last_coordinates=split_file[-2]
+    elif args.freq == True: 
+            last_coordinates=split_file[-9]
+## frequency files take the lowest energy set of coordinates and perform a frequency calculation, 
+## so the set of coordinates is buried deep in the file
     return last_coordinates
 
 #The following two functions are for 9999 errors only
@@ -175,6 +186,10 @@ def get_index_of_lowest_energy(args, string_to_match):
     	for line in f:
     		if re.search(string_to_match, line):
     			matches.append(line)
+    if args.freq == True:
+        del matches[-5:-1]
+        del matches[-1]
+## freq adds some redundant calculations at the end, which end up matching things, so we want to eliminate those extra matches
 #match the density functional I found to the lines that contain the structure energies 
     just_energies=()
     for line in matches:
@@ -193,7 +208,7 @@ def get_index_of_lowest_energy(args, string_to_match):
 #determine the index of the lowest energy
     lowest_energy_kJ=(lowest_energy*2625.5)
 #convert the lowest energy to kilojoules per mole
-    print(lowest_energy_kJ, "kJ/mol")
+    print("The energy of your structure is", lowest_energy_kJ, "kJ/mol")
     return lowest_energy_index
 
 def get_coordinates_of_lowest_energy(args, lowest_energy_index):
@@ -375,7 +390,7 @@ def get_dot_com(args, options, filename_options):
         elif args.freq == True:
             syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_freq.com").format_map(filename_options)
-    print(completed_filename)     
+    print("Prepared .com file name:", completed_filename)     
     with open(completed_filename, 'w') as f:
         f.write(syntax)
 
@@ -564,7 +579,7 @@ def main():
         aligned_filename=align_xyz(filename)
         aligned_to_com(aligned_filename, args)
     else:
-        print("invalid")
+        print("invalid file type")
     
 if __name__ == "__main__":
     main()
