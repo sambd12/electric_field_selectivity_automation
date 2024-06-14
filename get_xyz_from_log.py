@@ -15,8 +15,6 @@ def get_arguments():
     #gets filename from command line
     parser.add_argument("filename", nargs=1, action='store')
     #gets density functional from command line
-    parser.add_argument("density_functional", choices=["b3lyp", "mn15", "b2plyp"], nargs=1, action="store")
-    #gets field stength from command line
     parser.add_argument("-f", "--freq", action="store_true")
     args=parser.parse_args()
     return args
@@ -44,46 +42,65 @@ def get_xyz_filename(args, termination_status):
     return xyz_filename
 
 def get_density_function(args):
-    density_functional=args.density_functional[0]
-    if density_functional.__contains__("mn15"):
-       string_to_match="RMN15"
-    elif density_functional.__contains__("b3lyp"):
-       string_to_match="RB3LYP"
-    elif density_functional.__contains__("b2plyp"):
-        string_to_match="RB2PLYP"
+    filename=args.filename[0]
+    if filename.__contains__("mn15"):
+       hybrid_status = False
+    elif filename.__contains__("b3lyp"):
+       hybrid_status = False
+    elif filename.__contains__("b2plyp"):
+        hybrid_status = True
     else:
-       print("enter a valid density function")
-    return string_to_match
+       print("Filename must contain a valid density functional")
+    return hybrid_status
 
 #The following two functions are only for normal termination
 
-def get_energy_of_last_structure(args, string_to_match):
+def get_energy_of_last_structure(args, hybrid_status):
+    #Find the lines that printed energies 
+    #Grab only the energy
+    #add all the energies as strings into a tuple  
+    #grab the last energy
+    #convert the energy to kJ/mol
     filename=args.filename[0]
     matches = []
-    with open(filename) as f:
-    	for line in f:
-    		if re.search(string_to_match, line):
-    			matches.append(line)			
-    if args.freq == True:
-        del matches[-5:-1]
-        del matches[-1]
-#match the density functional I found to the lines that contain the structure energies 
-    just_energies=()
-    for line in matches:
+    if hybrid_status == False:
+        string_to_match = "SCF Done:"
+        with open(filename) as f:
+        	for line in f:
+        		if re.search(string_to_match, line):
+        			matches.append(line)			
+        just_energies=()
+        for line in matches:
             each_line=line.split()
-            if len(each_line) > 4:
-#testing if the line contains energies, not just the matching string
-               each_energy=float(each_line[4])
-#Grab only the energy from the lines that contain the density functional match
-               just_energies= just_energies + (each_energy,)
-#add all the energies as strings into a tuple
-            else:
-               continue     
-    lowest_energy=just_energies[-1]
-#grab the last energy
-    kilojoules_energy=(lowest_energy*2625.5)
-#convert the energy to kJ/mol
-    print("The energy of your structure is", kilojoules_energy, "kJ/mol")
+            each_energy=float(each_line[4])
+            just_energies= just_energies + (each_energy,)
+        lowest_energy=just_energies[-1]
+        kilojoules_energy=(lowest_energy*2625.5)
+        print("Internal Energy:", kilojoules_energy, "kJ/mol")
+    if hybrid_status == True:
+        if filename.__contains__("b2plyp"):
+            string_to_match = "B2PLYP"
+        if filename.__contains__("b2plypd3"):
+            string_to_match = "B2PLYPD3"
+        with open(filename) as f:
+            for line in f:
+            	if re.search(string_to_match, line) and "SCF Done:" not in line:
+            			matches.append(line)
+            just_energies=()
+        del matches[0]
+        for line in matches:
+                each_line=line.split()
+                hartrees_scientific_energy=each_line[-1]
+                hartrees_scientific_split=hartrees_scientific_energy.split("D+0")
+            # divide up the scientific notation into the value and the scalar
+                hartrees_decimal=float(hartrees_scientific_split[0])
+                hartrees_scalar=float(hartrees_scientific_split[1])
+                hartrees=hartrees_decimal*10**(hartrees_scalar)
+            # multiply and add to the list of energies
+                just_energies= just_energies + (hartrees,)
+        lowest_energy=just_energies[-1]
+        kilojoules_energy=(lowest_energy*2625.5)
+        print("Internal Energy:", kilojoules_energy, "kJ/mol")
 
 def get_last_coordinates(args):
     filename=args.filename[0]
@@ -105,37 +122,56 @@ def get_last_coordinates(args):
 
 #The following two functions are for 9999 errors only
 
-def get_index_of_lowest_energy(args, string_to_match):
+def get_index_of_lowest_energy(args, hybrid_status):
+#determine which energy is lowest
+#determine the index of the lowest energy
+#convert the lowest energy to kilojoules per mole
     filename=args.filename[0]
     matches = []
-    with open(filename) as f:
-    	for line in f:
-    		if re.search(string_to_match, line):
-    			matches.append(line)
-#match the density functional I found to the lines that contain the structure energies 
-    if args.freq == True:
-        del matches[-5:-1]
-        del matches[-1]
-## freq adds some redundant calculations at the end, which end up matching things, so we want to eliminate those extra matches
-    just_energies=()
-    for line in matches:
+    if hybrid_status == False:
+        string_to_match = "SCF Done:"
+        with open(filename) as f:
+        	for line in f:
+        		if re.search(string_to_match, line):
+        			matches.append(line)			
+        just_energies=()
+        for line in matches:
             each_line=line.split()
-            if len(each_line) > 4:
-#testing if the line contains energies, not just the matching string
-               each_energy=float(each_line[4])
-#grab only the energy
-               just_energies= just_energies + (each_energy,)
-#add all energies as string to a tuple
-            else:
-               continue 
-    lowest_energy=min(just_energies)
-#determine which energy is lowest
-    lowest_energy_index=just_energies.index(lowest_energy)
-#determine the index of the lowest energy
-    lowest_energy_kJ=(lowest_energy*2625.5)
-#convert the lowest energy to kilojoules per mole
-    print("The energy of your structure is", lowest_energy_kJ, "kJ/mol")
-    return lowest_energy_index
+            each_energy=float(each_line[4])
+            just_energies= just_energies + (each_energy,)
+        lowest_energy=min(just_energies)
+        lowest_energy_index=just_energies.index(lowest_energy)
+        lowest_energy_kJ=(lowest_energy*2625.5)
+        print("Internal Energy:", lowest_energy_kJ, "kJ/mol")
+        return lowest_energy_index
+    if hybrid_status == True:
+        if filename.__contains__("b2plyp"):
+            string_to_match = "B2PLYP"
+        if filename.__contains__("b2plypd3"):
+            string_to_match = "B2PLYPD3"
+        with open(filename) as f:
+            for line in f:
+            	if re.search(string_to_match, line) and "SCF Done:" not in line:
+            			matches.append(line)
+            just_energies=()
+        del matches[0]
+        ## first line comes from the input of the file, need to delete that one
+        for line in matches:
+                each_line=line.split()
+                hartrees_scientific_energy=each_line[-1]
+                hartrees_scientific_split=hartrees_scientific_energy.split("D+0")
+            # divide up the scientific notation into the value and the scalar
+                hartrees_decimal=float(hartrees_scientific_split[0])
+                hartrees_scalar=float(hartrees_scientific_split[1])
+                hartrees=hartrees_decimal*10**(hartrees_scalar)
+            # multiply and add to the list of energies
+                just_energies= just_energies + (hartrees,)
+        lowest_energy=min(just_energies)
+            # get the lowest of the energies
+        lowest_energy_index=just_energies.index(lowest_energy)
+        lowest_energy_kJ=(lowest_energy*2625.5)
+        print("Internal Energy:", lowest_energy_kJ, "kJ/mol")
+        return lowest_energy_index
 
 def get_coordinates_of_lowest_energy(args, lowest_energy_index):
     filename=args.filename[0]
@@ -216,8 +252,17 @@ def get_free_energy(args):
             free_energy_line=line.split()
             free_energy=float(free_energy_line[-1])
             free_energy_kJ=(free_energy*2625.5)
-            print("The Free Energy of your structure is", free_energy_kJ, "kJ/mol")
+            print("Free Energy:", free_energy_kJ, "kJ/mol")
             
+def get_low_frequencies(args):
+    filename=args.filename[0]
+    string_to_match="Low frequencies"
+    matches = []
+    with open(filename) as f:
+    	for line in f:
+    		if re.search(string_to_match, line):
+    			matches.append(line)
+    print(matches[0],matches[1])
         
         
 def get_z_dipole(args):
@@ -240,7 +285,7 @@ def get_z_dipole(args):
     z_dipole_scalar=float(z_dipole_scientific_split[1])
     z_dipole=z_dipole_decimal*10**(z_dipole_scalar)
 # get the dipole moment out of scientific notation by multiplying the value by 10^ scalar
-    return z_dipole
+    print("The z dipole moment is", z_dipole, 'atomic units.')
     
 def get_z_polar(args):
     filename=args.filename[0]
@@ -262,7 +307,8 @@ def get_z_polar(args):
     zz_polar_scalar=float(zz_polar_scientific_split[1])
     zz_polar=zz_polar_decimal*10**(zz_polar_scalar)
 #get the dpiole moment out of scientific notation by multiplying the value by 10^ scalar
-    return zz_polar
+    print("The zz polarizability is", zz_polar, 'atomic units.')
+
 
 
 def main():
@@ -272,26 +318,26 @@ def main():
     
     termination_status=get_termination_status(args)
     xyz_filename=get_xyz_filename(args, termination_status)
-    string_to_match=get_density_function(args)
+    hybrid_status=get_density_function(args)
     
     #Functions depending on how the script proceeeds
     if termination_status == "normal":
-        get_energy_of_last_structure(args, string_to_match)
+        get_energy_of_last_structure(args, hybrid_status)
         last_coordinates=get_last_coordinates(args)
         turn_coordinates_to_file(last_coordinates, xyz_filename)
     elif termination_status == "error_9999":
-        lowest_energy_index=get_index_of_lowest_energy(args, string_to_match)
+        lowest_energy_index=get_index_of_lowest_energy(args, hybrid_status)
         lowest_energy_coordinates=get_coordinates_of_lowest_energy(args, lowest_energy_index)
         turn_coordinates_to_file(lowest_energy_coordinates, xyz_filename)
     else:
         print("Unknown error or file is still running")
     
-    if args.freq == True:
-          z_dipole=get_z_dipole(args)
-          zz_polarizability=get_z_polar(args)
+    if termination_status == "normal" and args.freq == True:
+          get_z_dipole(args)
+          get_z_polar(args)
           get_free_energy(args)
-          print("The z dipole moment is", z_dipole, 'atomic units.')
-          print("The zz polarizability is", zz_polarizability, 'atomic units.')
+          get_low_frequencies(args)
+    
           
 if __name__ == "__main__":
     main()

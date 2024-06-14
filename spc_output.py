@@ -14,8 +14,6 @@ def get_arguments():
     #Adds essential information as arguments
     #gets filename from command line
     parser.add_argument("filename", nargs=1, action='store')
-    #gets density functional from command line
-    parser.add_argument("density_functional", choices=["b3lyp", "mn15", 'b2plyp'], nargs=1, action="store")
     #gets field stength from command line
     parser.add_argument("-p", "--polar", action="store_true")
     parser.add_argument("-f", '--freq', action="store_true")
@@ -28,44 +26,24 @@ def get_xyz_filename(args):
     xyz_filename = name + '_structure.xyz'
     return xyz_filename
 
-def get_density_function(args):
-    density_functional=args.density_functional[0]
-    if density_functional.__contains__("mn15"):
-       string_to_match="RMN15"
-    elif density_functional.__contains__("b3lyp"):
-       string_to_match="RB3LYP"
-    elif density_functional.__contains__("b2plyp"):
-        string_to_match="RB2PLYP"
-    else:
-       print("enter a valid density function")
-    return string_to_match
-
 #The following two functions are only for normal termination
 
-def get_energy_of_last_structure(args, string_to_match):
+def get_energy(args):
     filename=args.filename[0]
+    string_to_match = "SCF Done:"
     matches = []
     with open(filename) as f:
     	for line in f:
     		if re.search(string_to_match, line):
     			matches.append(line)			
-#match the density functional I found to the lines that contain the structure energies 
-    just_energies=()
+## Find the line where the energy is printed
     for line in matches:
             each_line=line.split()
-            if len(each_line) > 4:
-#testing if the line contains energies, not just the matching string
-               each_energy=float(each_line[4])
-#Grab only the energy from the lines that contain the density functional match
-               just_energies= just_energies + (each_energy,)
-#add all the energies as strings into a tuple
-            else:
-               continue     
-    lowest_energy=just_energies[-1]
-#grab the last energy
-    kilojoules_energy=(lowest_energy*2625.5)
+            energy=float(each_line[4])
+#Grabs only the energy from the SCF Done: lines
+            kilojoules_energy=(energy*2625.5)
 #convert the energy to kJ/mol
-    print("The energy of your structure is", kilojoules_energy, "kJ/mol")
+            print("Internal Energy", kilojoules_energy, "kJ/mol")
 
 def get_last_coordinates(args):
     filename=args.filename[0]
@@ -125,7 +103,7 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
 #joins all the tuples to be one string
     file_xyzstring=str(complete_file)
 #writes file as .xyz
-    print("Structure coordinates:", xyz_filename)
+    print("Structure:", xyz_filename)
     with open(xyz_filename, 'w') as f:
         f.write(file_xyzstring)
         
@@ -141,7 +119,7 @@ def get_free_energy(args):
             free_energy_line=line.split()
             free_energy=float(free_energy_line[-1])
             free_energy_kJ=(free_energy*2625.5)
-            print("The Free Energy of your structure is", free_energy_kJ, "kJ/mol")
+            print("Free Energy:", free_energy_kJ, "kJ/mol")
 
 def get_z_dipole(args):
     filename=args.filename[0]
@@ -163,7 +141,7 @@ def get_z_dipole(args):
     z_dipole_scalar=float(z_dipole_scientific_split[1])
     z_dipole=z_dipole_decimal*10**(z_dipole_scalar)
 # get the dipole moment out of scientific notation by multiplying the value by 10^ scalar
-    return z_dipole
+    print("The z dipole moment is", z_dipole, 'atomic units.')
     
 def get_z_polar(args):
     filename=args.filename[0]
@@ -185,7 +163,17 @@ def get_z_polar(args):
     zz_polar_scalar=float(zz_polar_scientific_split[1])
     zz_polar=zz_polar_decimal*10**(zz_polar_scalar)
 #get the dpiole moment out of scientific notation by multiplying the value by 10^ scalar
-    return zz_polar
+    print("The zz polarizability is", zz_polar, 'atomic units.')
+
+def get_low_frequencies(args):
+        filename=args.filename[0]
+        string_to_match="Low frequencies"
+        matches = []
+        with open(filename) as f:
+        	for line in f:
+        		if re.search(string_to_match, line):
+        			matches.append(line)
+        print(matches[0],matches[1])
 
 
 def main():
@@ -194,22 +182,18 @@ def main():
     # get the name, and the density functional
     
     xyz_filename=get_xyz_filename(args)
-    string_to_match=get_density_function(args)
-    get_energy_of_last_structure(args, string_to_match)
+    get_energy(args)
     last_coordinates=get_last_coordinates(args)
     turn_coordinates_to_file(last_coordinates, xyz_filename)
+    
     if args.freq == True:
         get_free_energy(args)
-        z_dipole=get_z_dipole(args)
-        zz_polarizability=get_z_polar(args)
-        print("The z dipole moment is", z_dipole, 'atomic units.')
-        print("The zz polarizability is", zz_polarizability, 'atomic units.')
+        get_z_dipole(args)
+        get_z_polar(args)
+        get_low_frequencies(args)
     if args.polar == True:
-        z_dipole=get_z_dipole(args)
-        zz_polarizability=get_z_polar(args)
-        print("The z dipole moment is", z_dipole, 'atomic units.')
-        print("The zz polarizability is", zz_polarizability, 'atomic units.')
-        
+        get_z_dipole(args)
+        get_z_polar(args)
         
 if __name__ == "__main__":
     main()
