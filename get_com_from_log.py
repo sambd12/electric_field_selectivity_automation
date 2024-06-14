@@ -149,6 +149,10 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['density_functional'] = '_b3lyp'
     elif args.density_functional == ['mn15']:
         filename_options['density_functional'] = '_mn15'
+    elif args.density_functional == ['b2plyp']:
+        filename_options['density_functional'] = '_b2plyp'
+    elif args.density_functional == ['b2plypd3']:
+        filename_options['density_functional'] = '_b2plypd3'     
     
     if args.solvent == ['acn']:
         filename_options['solvent'] = '_acn'
