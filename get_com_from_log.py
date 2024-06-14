@@ -5,10 +5,10 @@ Created on Thu Feb 22 16:16:53 2024
 
 @author: samantha.bealldenn
 """
-import re
 import numpy as np
 import argparse
 from openbabel import pybel
+from get_xyz_from_log import log_to_xyz
 
 def get_arguments():
     parser=argparse.ArgumentParser()
@@ -95,188 +95,6 @@ def get_basis_set(args, options):
     elif args.basis_set == ['pvtz']:
             options['basis_set'] = "AUG-cc-pVTZ"
     return options
-
-def get_termination_status(args):
-    filename=args.filename[0]
-    with open(filename) as f:
-        for line in f:
-            if re.search(" Normal termination of Gaussian 16 at", line):
-                termination_status="normal"
-                return(termination_status)
-            elif re.search(" Error termination request processed by link 9999", line):
-                termination_status="error_9999"
-                return(termination_status)
-            elif re.search(" Error termination request processed by link l103", line):
-                print(line)
-
-def get_xyz_filename(args, termination_status):
-    log_filename=args.filename[0]
-    name=log_filename.split('.')[0] 
-    if termination_status == "normal":
-        xyz_filename = name + '_structure.xyz'
-    elif termination_status == "error_9999":
-        xyz_filename = name + '_9999structure.xyz'
-    return xyz_filename
-
-def get_density_function(args):
-    density_functional=args.density_functional[0]
-    if density_functional.__contains__("mn15"):
-       string_to_match="RMN15"
-    elif density_functional.__contains__("b3lyp"):
-       string_to_match="RB3LYP"
-    elif density_functional.__contains__("b2plyp"):
-           string_to_match="RB2PLYP"
-    else:
-       print("enter a valid density function")
-    return string_to_match
-
-#The following two functions are only for normal termination
-
-def get_energy_of_last_structure(args, string_to_match):
-    filename=args.filename[0]
-    matches = []
-    with open(filename) as f:
-    	for line in f:
-    		if re.search(string_to_match, line):
-    			matches.append(line)			
-    if args.freq == True:
-        del matches[-5:-1]
-        del matches[-1]
-## freq adds some redundant calculations at the end, which end up matching things, so we want to eliminate those extra matches
-#match the density functional I found to the lines that contain the structure energies 
-    just_energies=()
-    for line in matches:
-            each_line=line.split()
-            if len(each_line) > 4:
-#testing if the line contains energies, not just the matching string
-               each_energy=float(each_line[4])
-#Grab only the energy from the lines that contain the density functional match
-               just_energies= just_energies + (each_energy,)
-#add all the energies as strings into a tuple
-            else:
-               continue     
-    lowest_energy=just_energies[-1]
-#grab the last energy
-    kilojoules_energy=(lowest_energy*2625.5)
-#convert the energy to kJ/mol
-    print("The energy of your structure is", kilojoules_energy, "kJ/mol")
-
-def get_last_coordinates(args):
-    filename=args.filename[0]
-# gets the last set of coordinates
-# includes numbers and spaces that need to be taken out
-# is a tuple, each line/atom is a string in it
-    with open(filename, 'r') as f:
-        file_string=f.read()      
-    split_file=file_string.split("---------------------------------------------------------------------")
-    if args.freq == False:
-            last_coordinates=split_file[-2]
-    elif args.freq == True: 
-            last_coordinates=split_file[-9]
-## frequency files take the lowest energy set of coordinates and perform a frequency calculation, 
-## so the set of coordinates is buried deep in the file
-    return last_coordinates
-
-#The following two functions are for 9999 errors only
-
-def get_index_of_lowest_energy(args, string_to_match):
-    filename=args.filename[0]
-    matches = []
-    with open(filename) as f:
-    	for line in f:
-    		if re.search(string_to_match, line):
-    			matches.append(line)
-    if args.freq == True:
-        del matches[-5:-1]
-        del matches[-1]
-## freq adds some redundant calculations at the end, which end up matching things, so we want to eliminate those extra matches
-#match the density functional I found to the lines that contain the structure energies 
-    just_energies=()
-    for line in matches:
-            each_line=line.split()
-            if len(each_line) > 4:
-#testing if the line contains energies, not just the matching string
-               each_energy=float(each_line[4])
-#grab only the energy
-               just_energies= just_energies + (each_energy,)
-#add all energies as string to a tuple
-            else:
-               continue 
-    lowest_energy=min(just_energies)
-#determine which energy is lowest
-    lowest_energy_index=just_energies.index(lowest_energy)
-#determine the index of the lowest energy
-    lowest_energy_kJ=(lowest_energy*2625.5)
-#convert the lowest energy to kilojoules per mole
-    print("The energy of your structure is", lowest_energy_kJ, "kJ/mol")
-    return lowest_energy_index
-
-def get_coordinates_of_lowest_energy(args, lowest_energy_index):
-    filename=args.filename[0]
-    sets_of_coords=()
-    with open(filename, 'r') as f:
-        file_string=f.read()
-    split_file_by_paragraph=file_string.split("---------------------------------------------------------------------")
-    for paragraph in split_file_by_paragraph:
-        paragraph_by_line=paragraph.split("\n")
-        if len(paragraph_by_line) == (33):
-#ensures that the group of coordinates is the correct length (# of atoms +2), which means that it is the correct output format
-            coordinates="\n".join(paragraph_by_line)
-            sets_of_coords=sets_of_coords+(coordinates,)
-#takes all the sets of coordinates that are in the correct format
-    if (lowest_energy_index*3-2) > len(sets_of_coords):
-        lowest_energy_coordinates= sets_of_coords[lowest_energy_index]
-# checks to see if the sets_of_coords grabbed only the correctly formatted sets of coordinates
-# sometimes it grabs extra coordinates that are not correct, which the formula index*3-2 corrects for
-    elif (lowest_energy_index*3-2) < len(sets_of_coords):
-        lowest_energy_coordinates=sets_of_coords[(lowest_energy_index*3-2)]
-#weird formula that must be used as there are 3 sets of coordinates in the correct format that will be added per iteration done by Gaussian
-#we want the first one in the set of 3, so we multiply the index by 3 to get to the correctly group of coordinate sets
-#we subtract by 2 because the 1st set of coords in that group of 3 is in the format we want
-    return lowest_energy_coordinates
-
-#The following two functions are for both 9999 errors and normal termination 
-
-def turn_coordinates_to_file(coordinates, xyz_filename):
-#removes extraneous info from each line
-    coordinate_lines=coordinates.split("\n") 
-    del coordinate_lines[0]
-    coordinate_lines.pop()
-# first and last entry in the coordinates chunk are unneccessary
-    clean_file=()
-    for line in coordinate_lines:
-       each_line=line.split()
-# take out blank spaces & index of each atom in the structure
-       del each_line[0]
-       del each_line[1]
-#change atomic numbers to their letters
-       if each_line[0] == "1":
-           each_line[0]= "H"
-       if each_line[0] == "5":
-           each_line[0]= "B"
-       if each_line[0] == "6":
-           each_line[0]= "C"
-       if each_line[0] == "8":
-           each_line[0]= "O"
-       if each_line[0] == "9":
-           each_line[0]= "F"
-       if each_line[0] == "13":
-           each_line[0] = "Al"
-       if each_line[0] == "17":
-           each_line[0] = "Cl"           
-           
-#put the atoms back together, adding each atom line as a string to a tuple
-       each_line=" ".join(each_line)
-       clean_file= clean_file + (each_line,)
-#put the # of atoms at the top of the file & add that to the cleaned up coordinates
-    vmd_syntax = (str(len(clean_file)), "",)
-    vmd_file=(vmd_syntax + clean_file)
-    complete_file="\n".join(vmd_file)
-#joins all the tuples to be one string
-    file_xyzstring=str(complete_file)
-#writes file as .xyz
-    with open(xyz_filename, 'w') as f:
-        f.write(file_xyzstring)
 
 #turns the xyz file format into a z matrix format in a string
 def get_coordinates(options, filename):
@@ -385,10 +203,10 @@ def get_dot_com(args, options, filename_options):
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_freq.com").format_map(filename_options)
     elif args.qst3 != None:
         if args.freq == False:
-            syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
+            syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
         elif args.freq == True:
-            syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
+            syntax="%mem=24GB\n%NProcShared=32\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_freq.com").format_map(filename_options)
     print("Prepared .com file name:", completed_filename)     
     with open(completed_filename, 'w') as f:
@@ -509,21 +327,7 @@ def round_and_clean_up(coords, tol=1e-15, decimals = 6):
                 result[i,j] = np.round(component, decimals)
     return result
 
-def log_to_xyz(args):
-    termination_status=get_termination_status(args)
-    xyz_filename=get_xyz_filename(args, termination_status)
-    string_to_match=get_density_function(args)
-    if termination_status == "normal":
-        get_energy_of_last_structure(args, string_to_match)
-        last_coordinates=get_last_coordinates(args)
-        turn_coordinates_to_file(last_coordinates, xyz_filename)
-    elif termination_status == "error_9999":
-        lowest_energy_index=get_index_of_lowest_energy(args, string_to_match)
-        lowest_energy_coordinates=get_coordinates_of_lowest_energy(args, lowest_energy_index)
-        turn_coordinates_to_file(lowest_energy_coordinates, xyz_filename)
-    else:
-        print("Unknown error or file is still running")
-    return xyz_filename
+
 
 def align_xyz(filename):
     atom_col, coords = read_xyz(filename)

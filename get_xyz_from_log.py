@@ -309,18 +309,10 @@ def get_z_polar(args):
 #get the dpiole moment out of scientific notation by multiplying the value by 10^ scalar
     print("The zz polarizability is", zz_polar, 'atomic units.')
 
-
-
-def main():
-    args=get_arguments()
-    #notation for getting one specific argument is args.argument/option
-    #determine how to proceed, get the appropriate name, and the density functional
-    
+def log_to_xyz(args):
     termination_status=get_termination_status(args)
     xyz_filename=get_xyz_filename(args, termination_status)
     hybrid_status=get_density_function(args)
-    
-    #Functions depending on how the script proceeeds
     if termination_status == "normal":
         get_energy_of_last_structure(args, hybrid_status)
         last_coordinates=get_last_coordinates(args)
@@ -331,12 +323,19 @@ def main():
         turn_coordinates_to_file(lowest_energy_coordinates, xyz_filename)
     else:
         print("Unknown error or file is still running")
-    
     if termination_status == "normal" and args.freq == True:
           get_z_dipole(args)
           get_z_polar(args)
           get_free_energy(args)
           get_low_frequencies(args)
+    return xyz_filename
+
+def main():
+    args=get_arguments()
+    #notation for getting one specific argument is args.argument/option
+    #determine how to proceed, get the appropriate name, and the density functional
+    log_to_xyz(args)
+    
     
           
 if __name__ == "__main__":
