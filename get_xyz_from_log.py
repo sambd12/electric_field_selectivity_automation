@@ -86,7 +86,7 @@ def get_energy_of_last_structure(args, hybrid_status):
             string_unmatched = "RB2PLYPD3"
         with open(filename) as f:
             for line in f:
-            	if re.search(string_to_match, line) and string_unmatched not in line:
+            	if re.search(string_to_match, line) and string_unmatched not in line and "#n" not in line:
             			matches.append(line)
             just_energies=()
         del matches[0]
