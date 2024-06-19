@@ -129,6 +129,7 @@ def get_dotcom_filename(args, options, filename_options):
         options['product_type'] = "Aldehyde"
     else:
         filename_options['pathway'] = ""
+        options['product_type'] = "Other"
         
     if filename.__contains__("_s_"):
         filename_options['enantiomer'] = "_s"
