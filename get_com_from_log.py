@@ -20,7 +20,7 @@ def get_arguments():
     #gets field stength from command line
     parser.add_argument("field_strength", choices=["n4", "n3", "n2", "n1", 'nofield', 'p1', 'p2', 'p3', 'p4'], nargs=1, action="store")
     #gets solvent from command line
-    parser.add_argument("solvent", choices=["acn", "dcm"], nargs=1, action='store')
+    parser.add_argument("solvent", choices=["acn", "dcm", "nosolv"], nargs=1, action='store')
     parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz"], nargs=1, action="store")
     
     group = parser.add_mutually_exclusive_group(required=False)
@@ -81,6 +81,8 @@ def get_solvent(args, options):
         options['solvent'] = "SCRF=(Solvent=Acetonitrile)"
     elif args.solvent == ['dcm']:
         options['solvent'] = "SCRF=(Solvent=Dichloromethane)"
+    elif args.solvent == ['nosolv']:
+        options['solvent'] = ""
     else:
         print("Unrecognized solvent")
     return options
@@ -159,6 +161,8 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['solvent'] = '_acn'
     elif args.solvent == ['dcm']:
         filename_options['solvent'] = '_dcm'
+    elif args.solvent ==['nosolv']:
+        filename_options['solvent'] = "_nosolv"
         
         
     if args.basis_set == ['+']:
