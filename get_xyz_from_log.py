@@ -96,7 +96,6 @@ def get_energy_of_last_structure(args, hybrid_status):
             	if re.search(string_to_match, line) and string_unmatched not in line and "#n" not in line:
             			matches.append(line)
             just_energies=()
-        del matches[0]
         for line in matches:
                 each_line=line.split()
                 hartrees_scientific_energy=each_line[-1]
