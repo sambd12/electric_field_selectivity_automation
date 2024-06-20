@@ -15,7 +15,6 @@ def get_arguments():
     #gets filename from command line
     parser.add_argument("filename", nargs=1, action='store')
     #gets density functional from command line
-    parser.add_argument("-f", "--freq", action="store_true")
     args=parser.parse_args()
     return args
 
@@ -52,6 +51,14 @@ def get_density_function(args):
     else:
        print("Filename must contain a valid density functional")
     return hybrid_status
+
+def get_freq_status(args):
+    filename=args.filename[0]
+    if filename.__contains__("freq"):
+        freq_status = True
+    else:
+        freq_status = False
+    return freq_status
 
 #The following two functions are only for normal termination
 
@@ -104,7 +111,7 @@ def get_energy_of_last_structure(args, hybrid_status):
         kilojoules_energy=(lowest_energy*2625.5)
         print("Internal Energy:", kilojoules_energy, "kJ/mol")
 
-def get_last_coordinates(args):
+def get_last_coordinates(args, freq_status):
     filename=args.filename[0]
 # gets the last set of coordinates
 # includes numbers and spaces that need to be taken out
@@ -112,9 +119,9 @@ def get_last_coordinates(args):
     with open(filename, 'r') as f:
         file_string=f.read()      
     split_file=file_string.split("---------------------------------------------------------------------")
-    if args.freq == False:
+    if freq_status == False:
         last_coordinates=split_file[-2]
-    elif args.freq == True: 
+    elif freq_status == True: 
         if filename.__contains__("qst3"):
             last_coordinates=split_file[-9]
         else: last_coordinates=split_file[-12]
@@ -317,9 +324,10 @@ def log_to_xyz(args):
     termination_status=get_termination_status(args)
     xyz_filename=get_xyz_filename(args, termination_status)
     hybrid_status=get_density_function(args)
+    freq_status=get_freq_status(args)
     if termination_status == "normal":
         get_energy_of_last_structure(args, hybrid_status)
-        last_coordinates=get_last_coordinates(args)
+        last_coordinates=get_last_coordinates(args, freq_status)
         turn_coordinates_to_file(last_coordinates, xyz_filename)
     elif termination_status == "error_9999":
         lowest_energy_index=get_index_of_lowest_energy(args, hybrid_status)
@@ -327,7 +335,7 @@ def log_to_xyz(args):
         turn_coordinates_to_file(lowest_energy_coordinates, xyz_filename)
     else:
         print("Unknown error or file is still running")
-    if termination_status == "normal" and args.freq == True:
+    if termination_status == "normal" and freq_status == True:
           get_z_dipole(args)
           get_z_polar(args)
           get_free_energy(args)
