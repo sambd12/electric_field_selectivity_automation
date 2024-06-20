@@ -121,9 +121,15 @@ def get_last_coordinates(args, freq_status):
     if freq_status == False:
         last_coordinates=split_file[-2]
     elif freq_status == True: 
-        if filename.__contains__("qst3"):
-            last_coordinates=split_file[-9]
-        else: last_coordinates=split_file[-12]
+        if filename.__contains__("nosolv"):
+            if filename.__contains__("qst3"):
+                last_coordinates=split_file[-9]
+            else: last_coordinates=split_file[-10]
+        elif "nosolv" not in filename:
+            if filename.__contains__("qst3"):
+                last_coordinates=split_file[-9]
+            else:
+                last_coordinates=split_file[-12]
 ## frequency files take the lowest energy set of coordinates and perform a frequency calculation, 
 ## so the set of coordinates is buried deep in the file
     return last_coordinates
