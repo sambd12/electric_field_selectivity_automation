@@ -127,19 +127,24 @@ def round_and_clean_up(coords, tol=1e-15, decimals = 6):
                 result[i,j] = np.round(component, decimals)
     return result
 
-def align_xyz(filename, output_filename):
+def align_xyz(filename):
     atom_col, coords = read_xyz(filename)
     coords -= coords[0]
     rotated_coords_z = align_bond_to_z_axis(coords)
     rotated_coords = align_bond_to_x_axis(rotated_coords_z)
     rotated_coords = round_and_clean_up(rotated_coords)
+    
+    name=filename.split('.')[0] 
+    aligned_filename = name + '_aligned.xyz'
+    write_xyz(aligned_filename, atom_col, rotated_coords)
+    return aligned_filename
 
-    write_xyz(output_filename, atom_col, rotated_coords)
+    
 
 def main():
     args=get_arguments()
-    output_filename= "output.xyz"
-    align_xyz(args.filename[0], output_filename) 
+    filename = args.filename[0]
+    align_xyz(filename) 
 
 if __name__ == "__main__":
     main()
