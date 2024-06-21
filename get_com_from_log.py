@@ -185,6 +185,8 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['basis_set'] = "_pVDZ"  
     if args.basis_set == ['pvtz']:
         filename_options['basis_set'] = "_pVTZ"  
+    if args.basis_set == ['pvqz']:
+        filename_options['basis_set'] = "_pVQZ" 
     
     if args.field_strength == ['n4']:
         filename_options['field_strength'] = "_neg4"
