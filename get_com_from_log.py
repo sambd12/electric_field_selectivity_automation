@@ -32,6 +32,7 @@ def get_arguments():
     
     parser.add_argument("-f", "--freq", action="store_true")
     #adds the option to include frequency calculations, which factor entropy into the free energy calculations
+    parser.add_argument("-m", "--memory", nargs=2, action='store')
 
     args=parser.parse_args()
     return args
@@ -98,6 +99,14 @@ def get_basis_set(args, options):
     elif args.basis_set == ['pvtz']:
             options['basis_set'] = "AUG-cc-pVTZ"
     return options
+
+def get_memory_and_processors(args,options):
+    if args.memory == None:
+        options['memory'] = "24"
+        options['processors'] = "32"
+    if args.memory != None:
+        options['memory'] = args.memory[0]
+        options['processors'] = args.memory[1]
 
 #turns the xyz file format into a z matrix format in a string
 def get_coordinates(options, filename):
@@ -199,24 +208,24 @@ def get_dot_com(args, options, filename_options):
     #JUST reactant or product
     if args.spc == False and args.qst3 == None:
         if args.freq == False:
-            syntax="%mem=24GB\n%NProcShared=32\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\n {filename}\n\n{coordinates}\n".format_map(options)
+            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\n {filename}\n\n{coordinates}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
         elif args.freq == True:
-            syntax="%mem=24GB\n%NProcShared=32\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\n {filename}\n\n{coordinates}\n".format_map(options)
+            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\n {filename}\n\n{coordinates}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_freq.com").format_map(filename_options)        
     elif args.spc == True:
         if args.freq == False:
-            syntax="%mem=24GB\n%NProcShared=32\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Polar\n\n {filename}\n\n{coordinates}\n".format_map(options)
+            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Polar\n\n {filename}\n\n{coordinates}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_polar.com").format_map(filename_options)
         elif args.freq == True:
-            syntax="%mem=24GB\n%NProcShared=32\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\n {filename}\n\n{coordinates}\n".format_map(options)
+            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\n {filename}\n\n{coordinates}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_freq.com").format_map(filename_options)
     elif args.qst3 != None:
         if args.freq == False:
-            syntax="%mem=24GB\n%NProcShared=32\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
+            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
         elif args.freq == True:
-            syntax="%mem=24GB\n%NProcShared=32\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
+            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_freq.com").format_map(filename_options)
     print("Prepared .com file name:", completed_filename)     
     with open(completed_filename, 'w') as f:
@@ -229,6 +238,7 @@ def aligned_to_com(aligned_filename, args):
     get_field_strength(args, options)
     get_solvent(args, options)
     get_basis_set(args, options)
+    get_memory_and_processors(args,options)
     
     if args.qst3 == None:
         filename = aligned_filename
@@ -251,8 +261,7 @@ def aligned_to_com(aligned_filename, args):
         get_dotcom_filename(args, options, filename_options)
         get_dot_com(args, options, filename_options)
 
-def main():
-    args=get_arguments()
+def determine_filetype(args):
     filename=args.filename[0]
     #notation for getting one specific argument is args.argument/option
     if filename.__contains__(".log"):
@@ -264,6 +273,11 @@ def main():
         aligned_to_com(aligned_filename, args)
     else:
         print("invalid file type")
+
+def main():
+    args=get_arguments()
+    determine_filetype(args)
+ 
     
 if __name__ == "__main__":
     main()
