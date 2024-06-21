@@ -22,7 +22,7 @@ def get_arguments():
     parser.add_argument("field_strength", choices=["n4", "n3", "n2", "n1", 'nofield', 'p1', 'p2', 'p3', 'p4'], nargs=1, action="store")
     #gets solvent from command line
     parser.add_argument("solvent", choices=["acn", "dcm", "nosolv"], nargs=1, action='store')
-    parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz"], nargs=1, action="store")
+    parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz", "pvqz"], nargs=1, action="store")
     
     group = parser.add_mutually_exclusive_group(required=False)
     #changes the regular minimization to a single point calculation
@@ -98,6 +98,8 @@ def get_basis_set(args, options):
             options['basis_set'] = "AUG-cc-pVDZ"  
     elif args.basis_set == ['pvtz']:
             options['basis_set'] = "AUG-cc-pVTZ"
+    elif args.basis_set == ['pvqz']:
+            options['basis_set'] = "AUG-cc-pVQZ"
     return options
 
 def get_memory_and_processors(args,options):
