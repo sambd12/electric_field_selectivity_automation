@@ -175,7 +175,6 @@ def get_index_of_lowest_energy(args, hybrid_status):
             	if re.search(string_to_match, line) and string_unmatched not in line and "#n" not in line:
             			matches.append(line)
             just_energies=()
-        del matches[0]
         ## first line comes from the input of the file, need to delete that one
         for line in matches:
                 each_line=line.split()
