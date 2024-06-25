@@ -34,7 +34,7 @@ def get_arguments():
     #adds the option to include frequency calculations, which factor entropy into the free energy calculations.
     # can't have just frequency and hindered rotor
     group2.add_argument("-f", "--freq", action="store_true")
-    group2.add_argument("-h", "--hindered_rotor", actions='store_true')
+    group2.add_argument("-h", "--hindered_rotor", action='store_true')
     
     parser.add_argument("-m", "--memory", nargs=2, action='store')
 
