@@ -54,7 +54,7 @@ def get_density_function(args):
 
 def get_freq_status(args):
     filename=args.filename[0]
-    if filename.__contains__("freq"):
+    if filename.__contains__("freq") or filename.__contains__("_hr"):
         freq_status = True
     else:
         freq_status = False
@@ -118,20 +118,25 @@ def get_last_coordinates(args, freq_status):
     with open(filename, 'r') as f:
         file_string=f.read()      
     split_file=file_string.split("---------------------------------------------------------------------")
-    if freq_status == False:
+    if freq_status == False and "_hr" not in filename:
         last_coordinates=split_file[-2]
-    elif freq_status == True: 
+    elif freq_status == True or filename.__contains__("_hr"): 
         if filename.__contains__("nosolv"):
             if filename.__contains__("qst3"):
                 last_coordinates=split_file[-14]
-            else: last_coordinates=split_file[-10]
+            else: 
+                last_coordinates=split_file[-10]
         elif "nosolv" not in filename:
             if filename.__contains__("qst3"):
                 last_coordinates=split_file[-9]
-            else:
-                last_coordinates=split_file[-12]
+            elif "qst3" not in filename:
+                if filename.__contains__("_hr"):
+                    last_coordinates=split_file[-11]
+                else:
+                    last_coordinates=split_file[-12]
 ## frequency files take the lowest energy set of coordinates and perform a frequency calculation, 
 ## so the set of coordinates is buried deep in the file
+    print()
     return last_coordinates
 
 #The following two functions are for 9999 errors only
@@ -258,18 +263,54 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
         
 def get_free_energy(args):
     filename=args.filename[0]
-    string_to_match="Sum of electronic and thermal Free Energies="
-    matches = []
-    with open(filename) as f:
-    	for line in f:
-    		if re.search(string_to_match, line):
-    			matches.append(line)
-    for line in matches:
-            free_energy_line=line.split()
-            free_energy=float(free_energy_line[-1])
-            free_energy_kJ=(free_energy*2625.5)
-            print("Free Energy:", free_energy_kJ, "kJ/mol")
-            
+    if "_hr" not in filename:
+## gets the free energy if we do not correct for rotation
+        matches = []
+        with open(filename) as f:
+        	for line in f:
+        		if re.search("Sum of electronic and thermal Free Energies=", line):
+        			matches.append(line)
+        for line in matches:
+                free_energy_line=line.split()
+                free_energy=float(free_energy_line[-1])
+                free_energy_kJ=(free_energy*2625.5)
+                print("Free Energy:", free_energy_kJ, "kJ/mol")
+    elif filename.__contains__("_hr"):
+## gets the free energy if we do correct for rotation
+        matches = []
+        matches_ir = []
+        matches_total_thermal =[]
+## gets our free energy from the sum of electronic and thermal free energies
+        with open(filename) as f:
+        	for line in f:
+        		if re.search("Sum of electronic and thermal Free Energies=", line):
+        			matches.append(line)
+        for line in matches:
+                free_energy_line=line.split()
+                free_energy=float(free_energy_line[-1])
+                free_energy_kJ=(free_energy*2625.5)
+## gets the thermal energy with the rotational correction
+        with open(filename) as f:
+            for line in f:
+                if re.search("internal rot", line):
+                    matches_ir.append(line)
+            total_corrected_line=matches_ir[-1].split()
+            total_corrected=float(total_corrected_line[2])
+## gets the thermal energy without the rotational correctino
+        with open(filename) as f:
+            for line in f:
+                if re.search("Total", line):
+                    matches_total_thermal.append(line)
+            total_thermal_line=matches_total_thermal[-4].split()
+            total_thermal=float(total_thermal_line[1])
+## gets only the correction for rotation
+        internal_rot_correction = (total_corrected - total_thermal)
+## converts to kJ
+        internal_rot_correction_kJ = (internal_rot_correction*4.184) 
+## adds rotational correction to the free energy
+        total_free_energy= internal_rot_correction_kJ + free_energy_kJ
+        print("Free Energy corrected by internal rotation:", total_free_energy, "kJ/mol")
+
 def get_low_frequencies(args):
     filename=args.filename[0]
     string_to_match="Low frequencies"
