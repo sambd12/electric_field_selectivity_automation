@@ -112,31 +112,25 @@ def get_energy_of_last_structure(args, hybrid_status):
 
 def get_last_coordinates(args, freq_status):
     filename=args.filename[0]
+    sets_of_coords = []
 # gets the last set of coordinates
 # includes numbers and spaces that need to be taken out
-# is a tuple, each line/atom is a string in it
     with open(filename, 'r') as f:
         file_string=f.read()      
-    split_file=file_string.split("---------------------------------------------------------------------")
-    if freq_status == False and "_hr" not in filename:
-        last_coordinates=split_file[-2]
-    elif freq_status == True or filename.__contains__("_hr"): 
-        if filename.__contains__("nosolv"):
-            if filename.__contains__("qst3"):
-                last_coordinates=split_file[-14]
-            else: 
-                last_coordinates=split_file[-10]
-        elif "nosolv" not in filename:
-            if filename.__contains__("qst3"):
-                last_coordinates=split_file[-9]
-            elif "qst3" not in filename:
-                if filename.__contains__("_hr"):
-                    last_coordinates=split_file[-11]
-                else:
-                    last_coordinates=split_file[-12]
-## frequency files take the lowest energy set of coordinates and perform a frequency calculation, 
-## so the set of coordinates is buried deep in the file
-    print()
+    split_file_by_paragraph=file_string.split("---------------------------------------------------------------------")
+## each set of coordinates is surrounded on either side by -------...
+## splits the entire file by these and looks at what is in between each
+    for paragraph in split_file_by_paragraph:
+          paragraph_by_line=paragraph.split("\n")
+## splits each chunk into lines
+          if len(paragraph_by_line) == (33):
+##ensures that the group of coordinates is the correct length (# of atoms +2)
+              coordinates="\n".join(paragraph_by_line)
+##rejoins the lines
+              sets_of_coords.append(coordinates)
+##adds the set of coordinates to the possible matches
+    last_coordinates=sets_of_coords[-1]
+##finds the last match to get the last coordinates
     return last_coordinates
 
 #The following two functions are for 9999 errors only
