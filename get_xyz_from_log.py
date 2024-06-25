@@ -123,7 +123,7 @@ def get_last_coordinates(args, freq_status):
     elif freq_status == True: 
         if filename.__contains__("nosolv"):
             if filename.__contains__("qst3"):
-                last_coordinates=split_file[-9]
+                last_coordinates=split_file[-14]
             else: last_coordinates=split_file[-10]
         elif "nosolv" not in filename:
             if filename.__contains__("qst3"):
