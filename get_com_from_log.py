@@ -24,19 +24,21 @@ def get_arguments():
     parser.add_argument("solvent", choices=["acn", "dcm", "nosolv"], nargs=1, action='store')
     parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz", "pvqz"], nargs=1, action="store")
     
+    #adds the option to include frequency calculations, which factor entropy into the free energy calculations.
+    # can't have just frequency and hindered rotor
+    parser.add_argument("-f", "--freq", action="store_true")
+    parser.add_argument("-hr", "--hindered_rotor", action="store_true")
+
+    
+    parser.add_argument("-m", "--memory", nargs=2, action='store')
+    
     group = parser.add_mutually_exclusive_group(required=False)
     #changes the regular minimization to a single point calculation
     group.add_argument("-s", "--spc", action="store_true")
     #adds the option to make the output file QST3, in which case we want to get the names of the other two files being used
     group.add_argument("-q", "--qst3", nargs=2, action='store')
     
-    group2=parser.add_mutually_exclusive_group(required=False)
-    #adds the option to include frequency calculations, which factor entropy into the free energy calculations.
-    # can't have just frequency and hindered rotor
-    group2.add_argument("-f", "--freq", action="store_true")
-    group2.add_argument("-h", "--hindered_rotor", action='store_true')
-    
-    parser.add_argument("-m", "--memory", nargs=2, action='store')
+
 
     args=parser.parse_args()
     return args
@@ -110,12 +112,12 @@ def get_frequency(args, options):
     if args.freq == True:
         options['frequency'] = "Freq"
         options['hindered_rotor'] = ""
-    elif args.freq == False and args.hinderedrotor == False:
+    elif args.freq == False and args.hindered_rotor == False:
         options['frequency'] = ""
         options['hindered_rotor'] = ""
     elif args.hindered_rotor == True:
         options['frequency'] = "Freq=(HinderedRotor,ReadHinderedRotor)"
-        options['hindered_rotor'] = "\n1.0\n1 2 3 1 1\n"
+        options['hindered_rotor'] = "1.0\n1 2 3 1 1\n\n"
     return options
 
 def get_memory_and_processors(args,options):
@@ -142,11 +144,16 @@ def get_coordinates(options, filename):
 def get_dotcom_filename(args, options, filename_options):
     filename=args.filename[0]
     #gets product/reactant, ketone/aldehyde, enantiomer, and long/short arm parameters from the old file name
-    if filename.__contains__("product"):
-        filename_options['molecule_type'] = "_product"
-    elif filename.__contains__("reactant"):
-        filename_options['molecule_type'] = "_reactant"
-    else:   
+    if args.qst3 == None:
+        if filename.__contains__("product"):
+            filename_options['molecule_type'] = "_product"
+        elif filename.__contains__("reactant"):
+            filename_options['molecule_type'] = "_reactant"
+        elif filename.__contains__("epoxide"):
+            filename_options['molecule_type'] = "_epoxide"
+        else:
+            filename_options['molecule_type'] = "_other"
+    elif args.qst3 != None:   
         filename_options['molecule_type'] = "_qst3"
    
     ## adds aldehyde and ketone to the name of the file
