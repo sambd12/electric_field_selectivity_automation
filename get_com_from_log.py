@@ -30,8 +30,12 @@ def get_arguments():
     #adds the option to make the output file QST3, in which case we want to get the names of the other two files being used
     group.add_argument("-q", "--qst3", nargs=2, action='store')
     
-    parser.add_argument("-f", "--freq", action="store_true")
-    #adds the option to include frequency calculations, which factor entropy into the free energy calculations
+    group2=parser.add_mutually_exclusive_group(required=False)
+    #adds the option to include frequency calculations, which factor entropy into the free energy calculations.
+    # can't have just frequency and hindered rotor
+    group2.add_argument("-f", "--freq", action="store_true")
+    group2.add_argument("-h", "--hindered_rotor", actions='store_true')
+    
     parser.add_argument("-m", "--memory", nargs=2, action='store')
 
     args=parser.parse_args()
@@ -102,6 +106,18 @@ def get_basis_set(args, options):
             options['basis_set'] = "AUG-cc-pVQZ"
     return options
 
+def get_frequency(args, options):
+    if args.freq == True:
+        options['frequency'] = "Freq"
+        options['hindered_rotor'] = ""
+    elif args.freq == False and args.hinderedrotor == False:
+        options['frequency'] = ""
+        options['hindered_rotor'] = ""
+    elif args.hindered_rotor == True:
+        options['frequency'] = "Freq=(HinderedRotor,ReadHinderedRotor)"
+        options['hindered_rotor'] = "\n1.0\n1 2 3 1 1\n"
+    return options
+
 def get_memory_and_processors(args,options):
     if args.memory == None:
         options['memory'] = "24"
@@ -109,7 +125,7 @@ def get_memory_and_processors(args,options):
     if args.memory != None:
         options['memory'] = args.memory[0]
         options['processors'] = args.memory[1]
-
+        
 #turns the xyz file format into a z matrix format in a string
 def get_coordinates(options, filename):
     with open(filename, 'r') as f:
@@ -206,31 +222,30 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['field_strength'] = "_pos3"
     elif args.field_strength == ['p4']:
         filename_options['field_strength'] = "_pos4"
+        
+    if args.freq == True:
+        filename_options['frequency'] = "_freq"
+    elif args.hindered_rotor == True:
+        filename_options['frequency'] = "_hr"    
+    elif args.freq == False and args.hindered_rotor == False:
+        filename_options['frequency'] = ""
     return filename_options
 
 def get_dot_com(args, options, filename_options):
     #JUST reactant or product
     if args.spc == False and args.qst3 == None:
-        if args.freq == False:
-            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\n {filename}\n\n{coordinates}\n".format_map(options)
-            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
-        elif args.freq == True:
-            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\n {filename}\n\n{coordinates}\n".format_map(options)
-            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_freq.com").format_map(filename_options)        
+        syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\n {filename}\n\n{coordinates}\n{hindered_rotor}".format_map(options)
+        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}.com").format_map(filename_options)        
     elif args.spc == True:
-        if args.freq == False:
+        if args.freq == False and args.hindered_rotor == False:
             syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Polar\n\n {filename}\n\n{coordinates}\n".format_map(options)
             completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_polar.com").format_map(filename_options)
-        elif args.freq == True:
-            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\n {filename}\n\n{coordinates}\n".format_map(options)
-            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_freq.com").format_map(filename_options)
+        elif args.freq == True or args.hindered_rotor == True:
+            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\n {filename}\n\n{coordinates}\n{hindered_rotor}".format_map(options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_{frequency}.com").format_map(filename_options)
     elif args.qst3 != None:
-        if args.freq == False:
-            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
-            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}.com").format_map(filename_options)
-        elif args.freq == True:
-            syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Freq\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n".format_map(options)
-            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_freq.com").format_map(filename_options)
+        syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n{hindered_rotor}".format_map(options)
+        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}.com").format_map(filename_options)
     print("Prepared .com file name:", completed_filename)     
     with open(completed_filename, 'w') as f:
         f.write(syntax)
@@ -242,6 +257,7 @@ def aligned_to_com(aligned_filename, args):
     get_field_strength(args, options)
     get_solvent(args, options)
     get_basis_set(args, options)
+    get_frequency(args, options)
     get_memory_and_processors(args,options)
     
     if args.qst3 == None:
