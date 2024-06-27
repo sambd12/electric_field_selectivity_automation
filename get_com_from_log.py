@@ -243,6 +243,8 @@ def get_dotcom_filename(args, options, filename_options):
     if args.comment != None:
         comment = args.comment[0]
         filename_options['comment'] = "_" + comment
+    elif args.comment == None:
+        filename_options['comment'] = ""
     return filename_options
 
 def get_dot_com(args, options, filename_options):
