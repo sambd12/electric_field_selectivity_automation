@@ -27,7 +27,7 @@ def get_termination_status(args):
                 return(termination_status)
             elif re.search(" Error termination request processed by link 9999", line):
                 termination_status="error_9999"
-            elif re.search("l103", line):
+            elif re.search(" Error termination via lnk1e in /usr/local/g16/g16/l103.exe at", line):
                 termination_status="error_l103"
             else:
                 print("unknown_error")
