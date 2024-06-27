@@ -33,6 +33,7 @@ def get_arguments():
 
     
     parser.add_argument("-m", "--memory", nargs=2, action='store')
+    parser.add_argument("-c", "--comment", nargs=1, action='store')
     
     group = parser.add_mutually_exclusive_group(required=False)
     #changes the regular minimization to a single point calculation
@@ -238,23 +239,27 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['frequency'] = "_hr"    
     elif args.freq == False and args.hindered_rotor == False:
         filename_options['frequency'] = ""
+        
+    if args.comment != None:
+        comment = args.comment[0]
+        filename_options['comment'] = "_" + comment
     return filename_options
 
 def get_dot_com(args, options, filename_options):
     #JUST reactant or product
     if args.spc == False and args.qst3 == None:
         syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\n {filename}\n\n{coordinates}\n{hindered_rotor}".format_map(options)
-        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}.com").format_map(filename_options)        
+        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}{comment}.com").format_map(filename_options)        
     elif args.spc == True:
         if args.freq == False and args.hindered_rotor == False:
             syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} Polar\n\n {filename}\n\n{coordinates}\n".format_map(options)
-            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_polar.com").format_map(filename_options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_polar{comment}.com").format_map(filename_options)
         elif args.freq == True or args.hindered_rotor == True:
             syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\n {filename}\n\n{coordinates}\n{hindered_rotor}".format_map(options)
-            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_{frequency}.com").format_map(filename_options)
+            completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}_spc_{frequency}{comment}.com").format_map(filename_options)
     elif args.qst3 != None:
         syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n{hindered_rotor}".format_map(options)
-        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}.com").format_map(filename_options)
+        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}{comment}.com").format_map(filename_options)
     print("Prepared .com file name:", completed_filename)     
     with open(completed_filename, 'w') as f:
         f.write(syntax)
