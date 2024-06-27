@@ -28,8 +28,8 @@ def get_termination_status(args):
             elif re.search(" Error termination request processed by link 9999", line):
                 termination_status="error_9999"
                 return(termination_status)
-            elif re.search(" Error termination request processed by link l103", line):
-                print(line)
+            elif re.search("l103", line):
+                termination_status="error_l103"
 
 def get_xyz_filename(args, termination_status):
     log_filename=args.filename[0]
@@ -38,6 +38,8 @@ def get_xyz_filename(args, termination_status):
         xyz_filename = name + '_structure.xyz'
     elif termination_status == "error_9999":
         xyz_filename = name + '_9999structure.xyz'
+    elif termination_status == "error_l103":
+        xyz_filename = name + '_103structure.xyz'
     return xyz_filename
 
 def get_density_function(args):
@@ -303,6 +305,7 @@ def get_free_energy(args):
 ## adds rotational correction to the free energy
         total_free_energy= internal_rot_correction_kJ + free_energy_kJ
         print("Free Energy corrected by internal rotation:", total_free_energy, "kJ/mol")
+        print("Correction by internal rotation:", internal_rot_correction_kJ, "kJ/mol")
 
 def get_low_frequencies(args):
     filename=args.filename[0]
@@ -368,7 +371,7 @@ def log_to_xyz(args):
         get_energy_of_last_structure(args, hybrid_status)
         last_coordinates=get_last_coordinates(args, freq_status)
         turn_coordinates_to_file(last_coordinates, xyz_filename)
-    elif termination_status == "error_9999":
+    elif termination_status == "error_9999" or termination_status == "error_l103":
         lowest_energy_index=get_index_of_lowest_energy(args, hybrid_status)
         lowest_energy_coordinates=get_coordinates_of_lowest_energy(args, lowest_energy_index)
         turn_coordinates_to_file(lowest_energy_coordinates, xyz_filename)
@@ -386,8 +389,6 @@ def main():
     #notation for getting one specific argument is args.argument/option
     #determine how to proceed, get the appropriate name, and the density functional
     log_to_xyz(args)
-    
-    
           
 if __name__ == "__main__":
     main()
