@@ -113,7 +113,7 @@ def get_energy_of_last_structure(args, hybrid_status):
         kilojoules_energy=(lowest_energy*2625.5)
         print("Internal Energy:", kilojoules_energy, "kJ/mol")
 
-def get_last_coordinates(args, freq_status):
+def get_last_coordinates(args):
     filename=args.filename[0]
     sets_of_coords = []
 # gets the last set of coordinates
@@ -126,8 +126,10 @@ def get_last_coordinates(args, freq_status):
     for paragraph in split_file_by_paragraph:
           paragraph_by_line=paragraph.split("\n")
 ## splits each chunk into lines
-          if len(paragraph_by_line) == (33):
+          if len(paragraph_by_line) == (33) and "-" not in paragraph_by_line[0]:
 ##ensures that the group of coordinates is the correct length (# of atoms +2)
+## and that we grabbed a set of coordinates, not another analysis that happened to be that long
+## if we have extra - separating our sections, they are not the correct format of coordinates
               coordinates="\n".join(paragraph_by_line)
 ##rejoins the lines
               sets_of_coords.append(coordinates)
@@ -198,20 +200,13 @@ def get_coordinates_of_lowest_energy(args, lowest_energy_index):
     split_file_by_paragraph=file_string.split("---------------------------------------------------------------------")
     for paragraph in split_file_by_paragraph:
         paragraph_by_line=paragraph.split("\n")
-        if len(paragraph_by_line) == (33):
+        if len(paragraph_by_line) == (33) and "-" not in paragraph_by_line[0]:
 #ensures that the group of coordinates is the correct length (# of atoms +2), which means that it is the correct output format
+## and that we grabbed a set of coordinates, not another analysis that happened to be that long
+## if we have extra - separating our sections, they are not the correct format of coordinates
             coordinates="\n".join(paragraph_by_line)
             sets_of_coords=sets_of_coords+(coordinates,)
-#takes all the sets of coordinates that are in the correct format
-    if (lowest_energy_index*3-2) > len(sets_of_coords):
-        lowest_energy_coordinates= sets_of_coords[lowest_energy_index]
-# checks to see if the sets_of_coords grabbed only the correctly formatted sets of coordinates
-# sometimes it grabs extra coordinates that are not correct, which the formula index*3-2 corrects for
-    elif (lowest_energy_index*3-2) < len(sets_of_coords):
-        lowest_energy_coordinates=sets_of_coords[(lowest_energy_index*3-2)]
-#weird formula that must be used as there are 3 sets of coordinates in the correct format that will be added per iteration done by Gaussian
-#we want the first one in the set of 3, so we multiply the index by 3 to get to the correctly group of coordinate sets
-#we subtract by 2 because the 1st set of coords in that group of 3 is in the format we want
+    lowest_energy_coordinates= sets_of_coords[lowest_energy_index]    
     return lowest_energy_coordinates
 
 #The following two functions are for both 9999 errors and normal termination 
@@ -370,7 +365,7 @@ def log_to_xyz(args):
     freq_status=get_freq_status(args)
     if termination_status == "normal":
         get_energy_of_last_structure(args, hybrid_status)
-        last_coordinates=get_last_coordinates(args, freq_status)
+        last_coordinates=get_last_coordinates(args)
         turn_coordinates_to_file(last_coordinates, xyz_filename)
     elif termination_status == "error_9999" or termination_status == "error_l103":
         lowest_energy_index=get_index_of_lowest_energy(args, hybrid_status)
