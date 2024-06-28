@@ -40,6 +40,8 @@ def get_arguments():
     group.add_argument("-s", "--spc", action="store_true")
     #adds the option to make the output file QST3, in which case we want to get the names of the other two files being used
     group.add_argument("-q", "--qst3", nargs=2, action='store')
+    # adds the option to do a transition state calculation, which does not require a reactant and product
+    group.add_argument("-ts", "--transition_state", action="store_true")
     
 
 
@@ -249,7 +251,7 @@ def get_dotcom_filename(args, options, filename_options):
 
 def get_dot_com(args, options, filename_options):
     #JUST reactant or product
-    if args.spc == False and args.qst3 == None:
+    if args.spc == False and args.qst3 == None and args.transition_state == False:
         syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=Z-Matrix NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\n {filename}\n\n{coordinates}\n{hindered_rotor}".format_map(options)
         completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}{comment}.com").format_map(filename_options)        
     elif args.spc == True:
@@ -262,6 +264,9 @@ def get_dot_com(args, options, filename_options):
     elif args.qst3 != None:
         syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=(Z-Matrix,QST3,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\nStarting Material\n\n{starting_material}\n{product_type} Product\n\n{product}\nSaddle Point Guess\n\n{saddle_point}\n{hindered_rotor}".format_map(options)
         completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}{comment}.com").format_map(filename_options)
+    elif args.transition_state == True:
+        syntax="%mem={memory}GB\n%NProcShared={processors}\n%chk=min.chk\n#n opt=(Z-Matrix,TS,calcfc) NoSymm {density_functional}/{basis_set} {empirical_dispersion} {field_strength} {solvent} {frequency}\n\n {filename}\n\n{coordinates}\n{hindered_rotor}".format_map(options)
+        completed_filename=("cis-stilbene_oxide{molecule_type}{density_functional}{basis_set}{solvent}{pathway}{enantiomer}{reactant_type}{field_strength}{frequency}{comment}.com").format_map(filename_options)        
     print("Prepared .com file name:", completed_filename)     
     with open(completed_filename, 'w') as f:
         f.write(syntax)
