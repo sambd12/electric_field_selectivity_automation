@@ -19,7 +19,7 @@ def get_arguments():
     #gets density functional from command line
     parser.add_argument("density_functional", choices=["b3lyp", "mn15", "b2plypd3", "b2plyp"], nargs=1, action="store")
     #gets field stength from command line
-    parser.add_argument("field_strength", choices=["n4", "n3", "n2", "n1", 'nofield', 'p1', 'p2', 'p3', 'p4'], nargs=1, action="store")
+    parser.add_argument("field_strength", choices=["n8","n7", "n6","n7", "n5","n4", "n3", "n2", "n1", 'nofield', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'], nargs=1, action="store")
     #gets solvent from command line
     parser.add_argument("solvent", choices=["acn", "dcm", "nosolv"], nargs=1, action='store')
     parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz", "pvqz"], nargs=1, action="store")
