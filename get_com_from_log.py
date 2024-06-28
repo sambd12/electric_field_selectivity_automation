@@ -68,7 +68,15 @@ def get_density_functional(args, options):
     
 #field strength options    
 def get_field_strength(args, options):
-    if args.field_strength == ['n4']:
+    if args.field_strength == ['n8']:
+        options['field_strength'] = "Field=Z-8"
+    elif args.field_strength == ['n7']:
+        options['field_strength'] = "Field=Z-7"
+    elif args.field_strength == ['n6']:
+        options['field_strength'] = "Field=Z-6"
+    elif args.field_strength == ['n5']:
+        options['field_strength'] = "Field=Z-5"
+    elif args.field_strength == ['n4']:
         options['field_strength'] = "Field=Z-4"
     elif args.field_strength == ['n3']:
         options['field_strength'] = "Field=Z-3"
@@ -86,6 +94,14 @@ def get_field_strength(args, options):
         options['field_strength'] = "Field=Z+3"
     elif args.field_strength == ['p4']:
         options['field_strength'] = "Field=Z+4"
+    elif args.field_strength == ['p5']:
+        options['field_strength'] = "Field=Z+5"
+    elif args.field_strength == ['p6']:
+        options['field_strength'] = "Field=Z+6"
+    elif args.field_strength == ['p7']:
+        options['field_strength'] = "Field=Z+7"
+    elif args.field_strength == ['p8']:
+        options['field_strength'] = "Field=Z+8"
     return options
     
 #solvent options
@@ -149,7 +165,7 @@ def get_coordinates(options, filename):
 def get_dotcom_filename(args, options, filename_options):
     filename=args.filename[0]
     #gets product/reactant, ketone/aldehyde, enantiomer, and long/short arm parameters from the old file name
-    if args.qst3 == None:
+    if args.qst3 == None and args.transition_state == False:
         if filename.__contains__("product"):
             filename_options['molecule_type'] = "_product"
         elif filename.__contains__("reactant"):
@@ -158,6 +174,8 @@ def get_dotcom_filename(args, options, filename_options):
             filename_options['molecule_type'] = "_epoxide"
         else:
             filename_options['molecule_type'] = "_other"
+    elif args.qst3 == None and args.transition_state == True:
+        filename_options['molecule_type'] = "_ts"
     elif args.qst3 != None:   
         filename_options['molecule_type'] = "_qst3"
    
@@ -215,8 +233,18 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['basis_set'] = "_pVTZ"  
     if args.basis_set == ['pvqz']:
         filename_options['basis_set'] = "_pVQZ" 
-    
-    if args.field_strength == ['n4']:
+        
+        
+        
+    if args.field_strength == ['n8']:
+        filename_options['field_strength'] = "_neg8"    
+    elif args.field_strength == ['n7']:
+        filename_options['field_strength'] = "_neg7"    
+    elif args.field_strength == ['n6']:
+        filename_options['field_strength'] = "_neg6"    
+    elif args.field_strength == ['n5']:
+        filename_options['field_strength'] = "_neg5"
+    elif args.field_strength == ['n4']:
         filename_options['field_strength'] = "_neg4"
     elif args.field_strength == ['n3']:
         filename_options['field_strength'] = "_neg3"
@@ -234,6 +262,15 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['field_strength'] = "_pos3"
     elif args.field_strength == ['p4']:
         filename_options['field_strength'] = "_pos4"
+    elif args.field_strength == ['p5']:
+        filename_options['field_strength'] = "_pos5"
+    elif args.field_strength == ['p6']:
+        filename_options['field_strength'] = "_pos6"
+    elif args.field_strength == ['p7']:
+        filename_options['field_strength'] = "_pos7"
+    elif args.field_strength == ['p8']:
+        filename_options['field_strength'] = "_pos8"
+        
         
     if args.freq == True:
         filename_options['frequency'] = "_freq"
