@@ -19,20 +19,14 @@ def get_arguments():
     #gets density functional from command line
     parser.add_argument("density_functional", choices=["b3lyp", "mn15", "b2plypd3", "b2plyp"], nargs=1, action="store")
     #gets field stength from command line
-    parser.add_argument("field_strength", choices=["n8","n7", "n6","n7", "n5","n4", "n3", "n2", "n1", 'nofield', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'], nargs=1, action="store")
+    # field strength should be nofield, nf, negx, nx, px, or posx, with x being an integer
+    parser.add_argument("field_strength", nargs=1, action="store")
     #gets solvent from command line
     parser.add_argument("solvent", choices=["acn", "dcm", "nosolv"], nargs=1, action='store')
     parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz", "pvqz"], nargs=1, action="store")
-    
-    #adds the option to include frequency calculations, which factor entropy into the free energy calculations.
-    # can't have just frequency and hindered rotor
-    group2 = parser.add_mutually_exclusive_group(required=False)
-    
-    group2.add_argument("-f", "--freq", action="store_true")
-    group2.add_argument("-hr", "--hindered_rotor", action="store_true")
-
-    
+    ## gives chance to change the memory and number of processors
     parser.add_argument("-m", "--memory", nargs=2, action='store')
+    ## gives chance to add a comment to the end of the filename from the command line
     parser.add_argument("-c", "--comment", nargs=1, action='store')
     
     group = parser.add_mutually_exclusive_group(required=False)
@@ -43,111 +37,130 @@ def get_arguments():
     # adds the option to do a transition state calculation, which does not require a reactant and product
     group.add_argument("-ts", "--transition_state", action="store_true")
     
-
+    #adds the option to include frequency calculations, which factor entropy into the free energy calculations.
+    # can't have just frequency and hindered rotor
+    group2 = parser.add_mutually_exclusive_group(required=False)
+    
+    group2.add_argument("-f", "--freq", action="store_true")
+    group2.add_argument("-hr", "--hindered_rotor", action="store_true")
 
     args=parser.parse_args()
     return args
     #args is the entire namespace
 
 #density functional options
-def get_density_functional(args, options):
+def get_density_functional(args, options, filename_options):
     if args.density_functional.__contains__('b3lyp'):
         options['density_functional'] = "B3LYP"
         options['empirical_dispersion'] = "EmpiricalDispersion=GD3"
+        filename_options['density_functional'] = '_b3lyp'
     elif args.density_functional.__contains__('mn15'):
         options['density_functional'] = "MN15"
         options['empirical_dispersion'] = ""
+        filename_options['density_functional'] = '_mn15'
     elif args.density_functional.__contains__('b2plypd3'):
         options['density_functional'] = "B2PLYPD3"
         options['empirical_dispersion'] = ""
+        filename_options['density_functional'] = '_b2plypd3'
     elif args.density_functional.__contains__('b2plyp'):
         options['density_functional'] = "B2PLYP"
         options['empirical_dispersion'] = ""
-    return options
+        filename_options['density_functional'] = '_b2plyp'         
+    return(options, filename_options)
 
     
 #field strength options    
-def get_field_strength(args, options):
-    if args.field_strength == ['n8']:
-        options['field_strength'] = "Field=Z-8"
-    elif args.field_strength == ['n7']:
-        options['field_strength'] = "Field=Z-7"
-    elif args.field_strength == ['n6']:
-        options['field_strength'] = "Field=Z-6"
-    elif args.field_strength == ['n5']:
-        options['field_strength'] = "Field=Z-5"
-    elif args.field_strength == ['n4']:
-        options['field_strength'] = "Field=Z-4"
-    elif args.field_strength == ['n3']:
-        options['field_strength'] = "Field=Z-3"
-    elif args.field_strength == ['n2']:
-        options['field_strength'] = "Field=Z-2"
-    elif args.field_strength == ['n1']:
-        options['field_strength'] = "Field=Z-1"
-    elif args.field_strength == ['nofield']:
+def get_field_strength(args, options, filename_options):
+    electric_field = args.field_strength[0]
+    ## EVALUATION OF INPUT MUST BE IN THIS ORDER
+    ## "n" will be contained if the input is nf/nofield/neg/n, so we check for n after we check for nofield/nf
+    ## instead of matching our input to a list of options, we will take the field and split it into the direction and strength
+    ## then recombine it with the proper syntax to be in the file name or in the .com file.
+    if electric_field.__contains__("nofield") or electric_field.__contains__("nf"):
+        filename_options['field_strength'] = "_nofield"
         options['field_strength'] = ""
-    elif args.field_strength == ['p1']:
-        options['field_strength'] = "Field=Z+1"
-    elif args.field_strength == ['p2']:
-        options['field_strength'] = "Field=Z+2"
-    elif args.field_strength == ['p3']:
-        options['field_strength'] = "Field=Z+3"
-    elif args.field_strength == ['p4']:
-        options['field_strength'] = "Field=Z+4"
-    elif args.field_strength == ['p5']:
-        options['field_strength'] = "Field=Z+5"
-    elif args.field_strength == ['p6']:
-        options['field_strength'] = "Field=Z+6"
-    elif args.field_strength == ['p7']:
-        options['field_strength'] = "Field=Z+7"
-    elif args.field_strength == ['p8']:
-        options['field_strength'] = "Field=Z+8"
-    return options
+    elif electric_field.__contains__("neg"):
+        field_direction = "Field=Z-"
+        field_direction_for_filename = "_neg"
+        field_strength = electric_field.split("g")[1]
+        filename_options['field_strength'] = field_direction_for_filename + field_strength
+        options['field_strength'] = field_direction + field_strength
+    elif electric_field.__contains__("n"):
+        field_direction = "Field=Z-"
+        field_direction_for_filename = "_neg"
+        field_strength = electric_field.split("n")[1]
+        filename_options['field_strength'] = field_direction_for_filename + field_strength
+        options['field_strength'] = field_direction + field_strength
+    elif electric_field.__contains__("pos"):
+        field_direction = "Field=Z+"
+        field_direction_for_filename = "_pos"
+        field_strength = electric_field.split("s")[1]
+        filename_options['field_strength'] = field_direction_for_filename + field_strength
+        options['field_strength'] = field_direction + field_strength
+    elif electric_field.__contains__("p"):
+        field_direction = "Field=Z+"
+        field_direction_for_filename = "_pos"
+        field_strength = electric_field.split("p")[1]
+        filename_options['field_strength'] = field_direction_for_filename + field_strength
+        options['field_strength'] = field_direction + field_strength
+    return(options, filename_options)
     
 #solvent options
-def get_solvent(args, options):
+def get_solvent(args, options, filename_options):
     if args.solvent == ['acn']:
         options['solvent'] = "SCRF=(Solvent=Acetonitrile)"
+        filename_options['solvent'] = '_acn'
     elif args.solvent == ['dcm']:
         options['solvent'] = "SCRF=(Solvent=Dichloromethane)"
+        filename_options['solvent'] = '_dcm'
     elif args.solvent == ['nosolv']:
         options['solvent'] = ""
+        filename_options['solvent'] = "_nosolv"
     else:
-        print("Unrecognized solvent")
-    return options
+        print("Unrecognized solvent")        
+    return(options, filename_options)
 
-def get_basis_set(args, options):
+def get_basis_set(args, options, filename_options):
     if args.basis_set == ['+']:
         options['basis_set'] = "6-311+g(d,p)"
+        filename_options['basis_set'] = ""
     elif args.basis_set == ['++']:
         options['basis_set'] = "6-311++g(d,p)"
+        filename_options['basis_set'] = "_++"
     elif args.basis_set == ['pvdz']:
-            options['basis_set'] = "AUG-cc-pVDZ"  
+        options['basis_set'] = "AUG-cc-pVDZ"  
+        filename_options['basis_set'] = "_pVDZ" 
     elif args.basis_set == ['pvtz']:
-            options['basis_set'] = "AUG-cc-pVTZ"
+        options['basis_set'] = "AUG-cc-pVTZ"
+        filename_options['basis_set'] = "_pVTZ"
     elif args.basis_set == ['pvqz']:
-            options['basis_set'] = "AUG-cc-pVQZ"
-    return options
+        options['basis_set'] = "AUG-cc-pVQZ"
+        filename_options['basis_set'] = "_pVQZ"
+    return(options, filename_options)
 
-def get_frequency(args, options):
+def get_frequency(args, options, filename_options):
     if args.freq == True:
         options['frequency'] = "Freq"
         options['hindered_rotor'] = ""
+        filename_options['frequency'] = "_freq"
     elif args.freq == False and args.hindered_rotor == False:
         options['frequency'] = ""
         options['hindered_rotor'] = ""
+        filename_options['frequency'] = ""
     elif args.hindered_rotor == True:
         options['frequency'] = "Freq=(HinderedRotor,ReadHinderedRotor)"
         options['hindered_rotor'] = "1.0\n1 2 3 1 1\n\n"
-    return options
+        filename_options['frequency'] = "_hr"
+    return(options, filename_options)
 
-def get_memory_and_processors(args,options):
+def get_memory_and_processors(args, options):
     if args.memory == None:
         options['memory'] = "24"
         options['processors'] = "32"
     if args.memory != None:
         options['memory'] = args.memory[0]
         options['processors'] = args.memory[1]
+    return options
         
 #turns the xyz file format into a z matrix format in a string
 def get_coordinates(options, filename):
@@ -204,87 +217,13 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['reactant_type'] = "_shortarm"
     else:
         filename_options['reactant_type'] = ""
-
-#gets the density functional, solvent, and field strength options from the command line
-    if args.density_functional == ['b3lyp']:
-        filename_options['density_functional'] = '_b3lyp'
-    elif args.density_functional == ['mn15']:
-        filename_options['density_functional'] = '_mn15'
-    elif args.density_functional == ['b2plyp']:
-        filename_options['density_functional'] = '_b2plyp'
-    elif args.density_functional == ['b2plypd3']:
-        filename_options['density_functional'] = '_b2plypd3'     
-    
-    if args.solvent == ['acn']:
-        filename_options['solvent'] = '_acn'
-    elif args.solvent == ['dcm']:
-        filename_options['solvent'] = '_dcm'
-    elif args.solvent ==['nosolv']:
-        filename_options['solvent'] = "_nosolv"
-        
-        
-    if args.basis_set == ['+']:
-        filename_options['basis_set'] = ""
-    if args.basis_set == ['++']:
-        filename_options['basis_set'] = "_++"
-    if args.basis_set == ['pvdz']:
-        filename_options['basis_set'] = "_pVDZ"  
-    if args.basis_set == ['pvtz']:
-        filename_options['basis_set'] = "_pVTZ"  
-    if args.basis_set == ['pvqz']:
-        filename_options['basis_set'] = "_pVQZ" 
-        
-        
-        
-    if args.field_strength == ['n8']:
-        filename_options['field_strength'] = "_neg8"    
-    elif args.field_strength == ['n7']:
-        filename_options['field_strength'] = "_neg7"    
-    elif args.field_strength == ['n6']:
-        filename_options['field_strength'] = "_neg6"    
-    elif args.field_strength == ['n5']:
-        filename_options['field_strength'] = "_neg5"
-    elif args.field_strength == ['n4']:
-        filename_options['field_strength'] = "_neg4"
-    elif args.field_strength == ['n3']:
-        filename_options['field_strength'] = "_neg3"
-    elif args.field_strength == ['n2']:
-        filename_options['field_strength'] = "_neg2"
-    elif args.field_strength == ['n1']:
-        filename_options['field_strength'] = "_neg1"
-    elif args.field_strength == ['nofield']:
-        filename_options['field_strength'] = "_nofield"
-    elif args.field_strength == ['p1']:
-        filename_options['field_strength'] = "_pos1"
-    elif args.field_strength == ['p2']:
-        filename_options['field_strength'] = "_pos2"
-    elif args.field_strength == ['p3']:
-        filename_options['field_strength'] = "_pos3"
-    elif args.field_strength == ['p4']:
-        filename_options['field_strength'] = "_pos4"
-    elif args.field_strength == ['p5']:
-        filename_options['field_strength'] = "_pos5"
-    elif args.field_strength == ['p6']:
-        filename_options['field_strength'] = "_pos6"
-    elif args.field_strength == ['p7']:
-        filename_options['field_strength'] = "_pos7"
-    elif args.field_strength == ['p8']:
-        filename_options['field_strength'] = "_pos8"
-        
-        
-    if args.freq == True:
-        filename_options['frequency'] = "_freq"
-    elif args.hindered_rotor == True:
-        filename_options['frequency'] = "_hr"    
-    elif args.freq == False and args.hindered_rotor == False:
-        filename_options['frequency'] = ""
         
     if args.comment != None:
         comment = args.comment[0]
         filename_options['comment'] = "_" + comment
     elif args.comment == None:
         filename_options['comment'] = ""
-    return filename_options
+    return(filename_options, options)
 
 def get_dot_com(args, options, filename_options):
     #JUST reactant or product
@@ -311,11 +250,11 @@ def get_dot_com(args, options, filename_options):
 def aligned_to_com(aligned_filename, args):
     options = dict()
     filename_options = dict()
-    get_density_functional(args, options)
-    get_field_strength(args, options)
-    get_solvent(args, options)
-    get_basis_set(args, options)
-    get_frequency(args, options)
+    get_density_functional(args, options, filename_options)
+    get_field_strength(args, options, filename_options)
+    get_solvent(args, options, filename_options)
+    get_basis_set(args, options, filename_options)
+    get_frequency(args, options, filename_options)
     get_memory_and_processors(args,options)
     
     if args.qst3 == None:
