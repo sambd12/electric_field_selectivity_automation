@@ -136,7 +136,7 @@ def parse_filename_for_info(filename):
 def write_energies_to_csv(tuple_of_energies, args):
     csv_filename = args.spreadsheet[0]
     df = pd.DataFrame(tuple_of_energies, 
-                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Electronic Energy', 'Thermal Energy', 'minusT\DeltaS', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.' ])
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Electronic Energy', 'Thermal Energy', 'minusT Delta S', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.' ])
     df.to_csv(csv_filename, index=False)
     
 def decompose_energy(args):
