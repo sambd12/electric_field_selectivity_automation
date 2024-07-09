@@ -9,6 +9,8 @@ Created on Thu Jun 20 15:57:24 2024
 import re
 import argparse
 import sys
+import numpy as np
+import pandas as pd
 
 sys.getdefaultencoding()
 
@@ -18,6 +20,7 @@ def get_arguments():
     #gets filename from command line
     parser.add_argument("filename", nargs="+", action='store')
     #gets density functional from command line
+    parser.add_argument("-s", "--spreadsheet", nargs=1, action='store')
     args=parser.parse_args()
     return args
 
@@ -73,7 +76,9 @@ def get_free_energies(energy_breakdown_list):
     print("Thermal Energy:", thermal_energy, "kJ/mol")
     print("-T\u0394S=", minus_temp_delta_s, "kJ/mol")
     print("Free Energy:", free_energy_kJ, "kJ/mol")
-    return free_energy_kJ
+    all_free_energies = [zero_pt_kJ, electronic_energy, thermal_energy, minus_temp_delta_s, free_energy_kJ]
+    return all_free_energies
+    
     
 def get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ):
     energy_breakdown = "\n".join(energy_breakdown_list)
@@ -94,17 +99,37 @@ def get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ):
     total_free_energy= internal_rot_correction_kJ + free_energy_kJ
     print("Free Energy corrected by internal rotation:", total_free_energy, "kJ/mol")
     print("Correction by internal rotation:", internal_rot_correction_kJ, "kJ/mol")
+    internal_rotation_corrections = [total_free_energy, internal_rot_correction_kJ]
+    return internal_rotation_corrections
+
+def write_energies_to_csv(tuple_of_energies, args):
+    csv_filename = args.spreadsheet[0]
+    df = pd.DataFrame(tuple_of_energies, 
+                 columns=['Filename', 'Zero-point Correction', 'Electronic Energy', 'Thermal Energy', 'minusT\DeltaS', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.' ])
+    df.to_csv(csv_filename, index=False)
     
+
 def decompose_energy(args):
+    tuple_of_energies = []
+    ## each file and its energies will go into this list 
     for f in range(len(args.filename)):
         filename = args.filename[f]
         print("\nEnergies for", filename)
         energy_breakdown_list=get_energy_breakdown(args)
         if filename.__contains__("_hr"):
-            free_energy_kJ= get_free_energies(energy_breakdown_list)
-            get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ)
+            all_free_energies=get_free_energies(energy_breakdown_list)
+            free_energy_kJ = all_free_energies[-1]
+            internal_rotation_corrections=get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ)
+            all_energies = all_free_energies + internal_rotation_corrections
+            all_energies.insert(0, filename)
         elif filename.__contains__("_freq"):
-            get_free_energies(energy_breakdown_list)
+            all_free_energies=get_free_energies(energy_breakdown_list)
+            internal_rotation_corrections=["N/A", "N/A"]
+            all_energies = all_free_energies + internal_rotation_corrections
+            all_energies.insert(0, filename)
+        tuple_of_energies.append(all_energies)
+    if args.spreadsheet != None:
+        write_energies_to_csv(tuple_of_energies, args)
         
 def main():
     args=get_arguments()
