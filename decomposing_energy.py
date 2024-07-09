@@ -156,12 +156,13 @@ def decompose_energy(args):
         filename_info=parse_filename_for_info(filename)
         all_energies_by_filename = filename_info + all_free_energies + internal_rotation_corrections
         tuple_of_energies.append(all_energies_by_filename)
-    if args.spreadsheet != None:
-        write_energies_to_csv(tuple_of_energies, args)
+    return tuple_of_energies
         
 def main():
     args=get_arguments()
-    decompose_energy(args)
+    tuple_of_energies=decompose_energy(args)
+    if args.spreadsheet != None:
+        write_energies_to_csv(tuple_of_energies, args)
 
 if __name__ == "__main__":
     main()
