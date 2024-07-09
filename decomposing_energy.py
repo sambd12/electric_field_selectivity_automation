@@ -8,12 +8,15 @@ Created on Thu Jun 20 15:57:24 2024
 
 import re
 import argparse
+import sys
+
+sys.getdefaultencoding()
 
 def get_arguments():
     parser=argparse.ArgumentParser()
     #Adds essential information as arguments
     #gets filename from command line
-    parser.add_argument("filename", nargs=1, action='store')
+    parser.add_argument("filename", nargs="+", action='store')
     #gets density functional from command line
     args=parser.parse_args()
     return args
@@ -68,7 +71,7 @@ def get_free_energies(energy_breakdown_list):
     print("Zero-point correction:", zero_pt_kJ, "kJ/mol")
     print("Electronic Energy:", electronic_energy, "kJ/mol")
     print("Thermal Energy:", thermal_energy, "kJ/mol")
-    print("-T_delta_S=", minus_temp_delta_s, "kJ/mol")
+    print("-T\u0394S=", minus_temp_delta_s, "kJ/mol")
     print("Free Energy:", free_energy_kJ, "kJ/mol")
     return free_energy_kJ
     
@@ -93,13 +96,15 @@ def get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ):
     print("Correction by internal rotation:", internal_rot_correction_kJ, "kJ/mol")
     
 def decompose_energy(args):
-    filename = args.filename[0]
-    energy_breakdown_list=get_energy_breakdown(args)
-    if filename.__contains__("_hr"):
-        free_energy_kJ= get_free_energies(energy_breakdown_list)
-        get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ)
-    elif filename.__contains__("_freq"):
-        get_free_energies(energy_breakdown_list)
+    for f in range(len(args.filename)):
+        filename = args.filename[f]
+        print("\nEnergies for", filename)
+        energy_breakdown_list=get_energy_breakdown(args)
+        if filename.__contains__("_hr"):
+            free_energy_kJ= get_free_energies(energy_breakdown_list)
+            get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ)
+        elif filename.__contains__("_freq"):
+            get_free_energies(energy_breakdown_list)
         
 def main():
     args=get_arguments()
