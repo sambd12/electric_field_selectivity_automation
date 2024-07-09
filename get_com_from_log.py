@@ -200,6 +200,8 @@ def get_dotcom_filename(args, options, filename_options):
     elif filename.__contains__("aldehyde"):
         filename_options['pathway'] = "_aldehyde"
         options['product_type'] = "Aldehyde"
+    elif filename.__contains("epoxide"):
+        filename_options['pathway'] = "epoxide"
     else:
         filename_options['pathway'] = ""
         options['product_type'] = "Other"

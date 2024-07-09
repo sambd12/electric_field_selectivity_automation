@@ -9,7 +9,6 @@ Created on Thu Jun 20 15:57:24 2024
 import re
 import argparse
 import sys
-import numpy as np
 import pandas as pd
 
 sys.getdefaultencoding()
@@ -102,13 +101,44 @@ def get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ):
     internal_rotation_corrections = [total_free_energy, internal_rot_correction_kJ]
     return internal_rotation_corrections
 
+def parse_filename_for_info(filename):
+    filename_info = []
+    filename_split = filename.split("_")
+    density_functional = filename_split[3]
+    basis_set = filename_split[4]
+    solvent = filename_split[5]
+    reaction_pathway = filename_split[6]
+    if len(filename_split) == 11:
+        field_strength = filename_split[-3]
+    elif len(filename_split) == 10:
+        field_strength = filename_split[-2]
+        
+    if filename.__contains__('qst3') or filename.__contains__('ts'):
+        structure_type = 'transition state'
+        if len(filename_split) == 12:
+            field_strength = filename_split[-3]
+        elif len(filename_split) == 11:
+            field_strength = filename_split[-2]
+    elif filename.__contains__('reactant'):
+        structure_type = 'reactant'
+        reaction_pathway = "N/A"
+    elif filename.__contains__('product'):
+        structure_type = "product"
+        reactant_conformer = "N/A"
+
+    if filename.__contains__("longarm"):
+        reactant_conformer = "long arm"
+    elif filename.__contains__("shortarm"):
+        reactant_conformer = "short arm"
+    filename_info = [density_functional, basis_set, solvent, reactant_conformer, structure_type, reaction_pathway, field_strength]
+    return filename_info
+
 def write_energies_to_csv(tuple_of_energies, args):
     csv_filename = args.spreadsheet[0]
     df = pd.DataFrame(tuple_of_energies, 
-                 columns=['Filename', 'Zero-point Correction', 'Electronic Energy', 'Thermal Energy', 'minusT\DeltaS', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.' ])
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Electronic Energy', 'Thermal Energy', 'minusT\DeltaS', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.' ])
     df.to_csv(csv_filename, index=False)
     
-
 def decompose_energy(args):
     tuple_of_energies = []
     ## each file and its energies will go into this list 
@@ -120,21 +150,18 @@ def decompose_energy(args):
             all_free_energies=get_free_energies(energy_breakdown_list)
             free_energy_kJ = all_free_energies[-1]
             internal_rotation_corrections=get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ)
-            all_energies = all_free_energies + internal_rotation_corrections
-            all_energies.insert(0, filename)
         elif filename.__contains__("_freq"):
             all_free_energies=get_free_energies(energy_breakdown_list)
             internal_rotation_corrections=["N/A", "N/A"]
-            all_energies = all_free_energies + internal_rotation_corrections
-            all_energies.insert(0, filename)
-        tuple_of_energies.append(all_energies)
+        filename_info=parse_filename_for_info(filename)
+        all_energies_by_filename = filename_info + all_free_energies + internal_rotation_corrections
+        tuple_of_energies.append(all_energies_by_filename)
     if args.spreadsheet != None:
         write_energies_to_csv(tuple_of_energies, args)
         
 def main():
     args=get_arguments()
     decompose_energy(args)
-    
 
 if __name__ == "__main__":
     main()
