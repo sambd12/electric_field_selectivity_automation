@@ -87,7 +87,7 @@ def get_energy_of_last_structure(args, hybrid_status):
             just_energies= just_energies + (each_energy,)
         lowest_energy=just_energies[-1]
         kilojoules_energy=(lowest_energy*2625.5)
-        print("Internal Energy:", kilojoules_energy, "kJ/mol")
+        print("\nInternal Energy:", kilojoules_energy, "kJ/mol")
     if hybrid_status == True:
         if filename.__contains__("b2plyp"):
             string_to_match = "B2PLYP"
