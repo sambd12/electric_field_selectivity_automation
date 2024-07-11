@@ -23,8 +23,7 @@ def get_arguments():
     args=parser.parse_args()
     return args
 
-def get_energy_breakdown(args):
-    filename=args.filename[0]
+def get_energy_breakdown(filename):
     with open (filename, 'r') as f:
         file_string=f.read()
     split_file_by_line=file_string.split("\n")
@@ -145,7 +144,7 @@ def decompose_energy(args):
     for f in range(len(args.filename)):
         filename = args.filename[f]
         print("\nEnergies for", filename)
-        energy_breakdown_list=get_energy_breakdown(args)
+        energy_breakdown_list=get_energy_breakdown(filename)
         if filename.__contains__("_hr"):
             all_free_energies=get_free_energies(energy_breakdown_list)
             free_energy_kJ = all_free_energies[-1]
