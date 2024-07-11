@@ -113,8 +113,31 @@ def get_energy_of_last_structure(args, hybrid_status):
         lowest_energy=just_energies[-1]
         kilojoules_energy=(lowest_energy*2625.5)
         print("Internal Energy:", kilojoules_energy, "kJ/mol")
+        
+        
+def get_molecule_length(args):
+    filename=args.filename[0]
+    with open (filename, 'r') as f:
+        file_string=f.read()
+    split_file_by_line=file_string.split("\n")
+    for line in split_file_by_line:
+        if re.search(" Symbolic Z-matrix:", line):
+            beginning_of_molecule_index = split_file_by_line.index(line)
+            break
+    for line in split_file_by_line:
+        if re.search(" The following ModRedundant input section has been read:", line):
+            end_of_molecule_index = split_file_by_line.index(line) - 1
+            break
+        elif re.search("Variables:", line):
+            end_of_molecule_index = split_file_by_line.index(line)
+            break
+    ## this is the line where the free energies start to be listed, so we want to document this index
+    input_molecule= split_file_by_line[beginning_of_molecule_index:end_of_molecule_index]
+    molecule_length=len(input_molecule)
+    ## grab all free energies that are printed
+    return molecule_length
 
-def get_last_coordinates(args):
+def get_last_coordinates(args, molecule_length):
     filename=args.filename[0]
     sets_of_coords = []
 # gets the last set of coordinates
@@ -127,7 +150,7 @@ def get_last_coordinates(args):
     for paragraph in split_file_by_paragraph:
           paragraph_by_line=paragraph.split("\n")
 ## splits each chunk into lines
-          if len(paragraph_by_line) == (33) and "-" not in paragraph_by_line[0]:
+          if len(paragraph_by_line) == molecule_length and "-" not in paragraph_by_line[0]:
 ##ensures that the group of coordinates is the correct length (# of atoms +2)
 ## and that we grabbed a set of coordinates, not another analysis that happened to be that long
 ## if we have extra - separating our sections, they are not the correct format of coordinates
@@ -193,7 +216,7 @@ def get_index_of_lowest_energy(args, hybrid_status):
         print("Internal Energy:", lowest_energy_kJ, "kJ/mol")
         return lowest_energy_index
 
-def get_coordinates_of_lowest_energy(args, lowest_energy_index):
+def get_coordinates_of_lowest_energy(args, lowest_energy_index, molecule_length):
     filename=args.filename[0]
     sets_of_coords=()
     with open(filename, 'r') as f:
@@ -201,7 +224,7 @@ def get_coordinates_of_lowest_energy(args, lowest_energy_index):
     split_file_by_paragraph=file_string.split("---------------------------------------------------------------------")
     for paragraph in split_file_by_paragraph:
         paragraph_by_line=paragraph.split("\n")
-        if len(paragraph_by_line) == (33) and "-" not in paragraph_by_line[0]:
+        if len(paragraph_by_line) == molecule_length and "-" not in paragraph_by_line[0]:
 #ensures that the group of coordinates is the correct length (# of atoms +2), which means that it is the correct output format
 ## and that we grabbed a set of coordinates, not another analysis that happened to be that long
 ## if we have extra - separating our sections, they are not the correct format of coordinates
@@ -313,13 +336,14 @@ def log_to_xyz(args):
     xyz_filename=get_xyz_filename(args, termination_status)
     hybrid_status=get_density_function(args)
     freq_status=get_freq_status(args)
+    molecule_length=get_molecule_length(args)
     if termination_status == "normal":
         get_energy_of_last_structure(args, hybrid_status)
-        last_coordinates=get_last_coordinates(args)
+        last_coordinates=get_last_coordinates(args, molecule_length)
         turn_coordinates_to_file(last_coordinates, xyz_filename)
     elif termination_status == "error_9999" or termination_status == "error_l103":
         lowest_energy_index=get_index_of_lowest_energy(args, hybrid_status)
-        lowest_energy_coordinates=get_coordinates_of_lowest_energy(args, lowest_energy_index)
+        lowest_energy_coordinates=get_coordinates_of_lowest_energy(args, lowest_energy_index, molecule_length)
         turn_coordinates_to_file(lowest_energy_coordinates, xyz_filename)
     else:
         print("Unknown error or file is still running")
