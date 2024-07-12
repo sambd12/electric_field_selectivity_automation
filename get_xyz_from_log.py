@@ -250,18 +250,20 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
 #change atomic numbers to their letters
        if each_line[0] == "1":
            each_line[0]= "H"
-       if each_line[0] == "5":
+       elif each_line[0] == "5":
            each_line[0]= "B"
-       if each_line[0] == "6":
+       elif each_line[0] == "6":
            each_line[0]= "C"
-       if each_line[0] == "8":
+       elif each_line[0] == "8":
            each_line[0]= "O"
-       if each_line[0] == "9":
+       elif each_line[0] == "9":
            each_line[0]= "F"
-       if each_line[0] == "13":
+       elif each_line[0] == "13":
            each_line[0] = "Al"
-       if each_line[0] == "17":
+       elif each_line[0] == "17":
            each_line[0] = "Cl"
+       elif each_line[0] == "15":
+            each_line[0] = "P"
 #put the atoms back together, adding each atom line as a string to a tuple
        each_line=" ".join(each_line)
        clean_file= clean_file + (each_line,)
