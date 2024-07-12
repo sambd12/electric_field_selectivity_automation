@@ -254,16 +254,19 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
            each_line[0]= "B"
        elif each_line[0] == "6":
            each_line[0]= "C"
+       elif each_line[0] == "7":
+            each_line[0] = "N"
        elif each_line[0] == "8":
            each_line[0]= "O"
        elif each_line[0] == "9":
            each_line[0]= "F"
        elif each_line[0] == "13":
            each_line[0] = "Al"
-       elif each_line[0] == "17":
-           each_line[0] = "Cl"
        elif each_line[0] == "15":
             each_line[0] = "P"
+       elif each_line[0] == "17":
+           each_line[0] = "Cl"
+       
 #put the atoms back together, adding each atom line as a string to a tuple
        each_line=" ".join(each_line)
        clean_file= clean_file + (each_line,)
