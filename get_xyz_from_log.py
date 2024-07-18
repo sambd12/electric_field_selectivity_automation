@@ -91,15 +91,13 @@ def get_energy_of_last_structure(args, hybrid_status):
     if hybrid_status == True:
         if filename.__contains__("b2plyp"):
             string_to_match = "B2PLYP"
-            string_unmatched = "RB2PLYP"
         if filename.__contains__("b2plypd3"):
             string_to_match = "B2PLYPD3"
-            string_unmatched = "RB2PLYPD3"
         with open(filename) as f:
             for line in f:
-            	if re.search(string_to_match, line) and string_unmatched not in line and "#n" not in line:
+            	if re.search(string_to_match, line) and re.search("E2", line):
             			matches.append(line)
-            just_energies=()
+        just_energies=()
         for line in matches:
                 each_line=line.split()
                 hartrees_scientific_energy=each_line[-1]
@@ -189,15 +187,13 @@ def get_index_of_lowest_energy(args, hybrid_status):
     if hybrid_status == True:
         if filename.__contains__("b2plyp"):
             string_to_match = "B2PLYP"
-            string_unmatched = "RB2PLYP"
         if filename.__contains__("b2plypd3"):
             string_to_match = "B2PLYPD3"
-            string_unmatched = "RB2PLYPD3"
         with open(filename) as f:
             for line in f:
-            	if re.search(string_to_match, line) and string_unmatched not in line and "#n" not in line:
+            	if re.search(string_to_match, line) and re.search("E2", line):
             			matches.append(line)
-            just_energies=()
+        just_energies=()
         ## first line comes from the input of the file, need to delete that one
         for line in matches:
                 each_line=line.split()
