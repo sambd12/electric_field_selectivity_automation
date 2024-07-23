@@ -124,6 +124,9 @@ def parse_filename_for_info(filename):
     elif filename.__contains__('product'):
         structure_type = "product"
         reactant_conformer = "N/A"
+    elif filename.__contains('epoxide'):
+        structure_type ='epoxide'
+        reactant_conformer = "N/A"
 
     if filename.__contains__("longarm"):
         reactant_conformer = "long arm"
