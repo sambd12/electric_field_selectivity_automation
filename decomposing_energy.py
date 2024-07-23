@@ -124,7 +124,7 @@ def parse_filename_for_info(filename):
     elif filename.__contains__('product'):
         structure_type = "product"
         reactant_conformer = "N/A"
-    elif filename.__contains('epoxide'):
+    elif filename.__contains__('epoxide'):
         structure_type ='epoxide'
         reactant_conformer = "N/A"
 
