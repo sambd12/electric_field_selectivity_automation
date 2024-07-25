@@ -118,7 +118,7 @@ def get_solvent(args, options, filename_options):
         filename_options['solvent'] = "_nosolv"
     elif args.solvent == ['benz']:
         options['solvent'] = "SCRF=(Solvent=Benzene)"
-        filename_options['solvent'] = "_benz"
+        filename_options['solvent'] = "_benzene"
     elif args.solvent == ['tcm']:
         options['solvent'] = "SCRF=(Solvent=Chloroform)"
         filename_options['solvent'] = "_tcm"
