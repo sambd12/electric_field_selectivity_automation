@@ -22,7 +22,7 @@ def get_arguments():
     # field strength should be nofield, nf, negx, nx, px, or posx, with x being an integer
     parser.add_argument("field_strength", nargs=1, action="store")
     #gets solvent from command line
-    parser.add_argument("solvent", choices=["acn", "dcm", "nosolv"], nargs=1, action='store')
+    parser.add_argument("solvent", choices=["acn", "dcm", "benz", "tcm", "nosolv"], nargs=1, action='store')
     parser.add_argument("basis_set", choices=["+", "++", "pvdz", "pvtz", "pvqz"], nargs=1, action="store")
     ## gives chance to change the memory and number of processors
     parser.add_argument("-m", "--memory", nargs=2, action='store')
@@ -116,6 +116,12 @@ def get_solvent(args, options, filename_options):
     elif args.solvent == ['nosolv']:
         options['solvent'] = ""
         filename_options['solvent'] = "_nosolv"
+    elif args.solvent == ['benz']:
+        options['solvent'] = "SCRF=(Solvent=Benzene)"
+        filename_options['solvent'] = "_benz"
+    elif args.solvent == ['tcm']:
+        options['solvent'] = "SCRF=(Solvent=Chloroform)"
+        filename_options['solvent'] = "_tcm"
     else:
         print("Unrecognized solvent")        
     return(options, filename_options)
