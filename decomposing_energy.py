@@ -10,6 +10,7 @@ import re
 import argparse
 import sys
 import pandas as pd
+from corrected_free_energy import get_entropy_corrected_G
 
 sys.getdefaultencoding()
 
@@ -138,7 +139,7 @@ def parse_filename_for_info(filename):
 def write_energies_to_csv(tuple_of_energies, args):
     csv_filename = args.spreadsheet[0]
     df = pd.DataFrame(tuple_of_energies, 
-                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Electronic Energy', 'Thermal Energy', 'minusT Delta S', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.' ])
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Electronic Energy', 'Thermal Energy', 'minusT Delta S', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.', 'Quasi-Rho G', 'Quasi-Harmonic G' ])
     df.to_csv(csv_filename, index=False)
     
 def decompose_energy(args):
@@ -148,6 +149,7 @@ def decompose_energy(args):
         filename = args.filename[f]
         print("\nEnergies for", filename)
         energy_breakdown_list=get_energy_breakdown(filename)
+        entropy_corrected_G = get_entropy_corrected_G(filename, temperature=None, w0=100.)
         if filename.__contains__("_hr"):
             all_free_energies=get_free_energies(energy_breakdown_list)
             free_energy_kJ = all_free_energies[-1]
@@ -156,7 +158,7 @@ def decompose_energy(args):
             all_free_energies=get_free_energies(energy_breakdown_list)
             internal_rotation_corrections=["N/A", "N/A"]
         filename_info=parse_filename_for_info(filename)
-        all_energies_by_filename = filename_info + all_free_energies + internal_rotation_corrections
+        all_energies_by_filename = filename_info + all_free_energies + internal_rotation_corrections + entropy_corrected_G
         tuple_of_energies.append(all_energies_by_filename)
     return tuple_of_energies
         
