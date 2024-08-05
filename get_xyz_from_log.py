@@ -125,14 +125,17 @@ def get_molecule_length(args):
             break
     for line in split_file_by_line:
         if re.search(" The following ModRedundant input section has been read:", line):
-            end_of_molecule_index = split_file_by_line.index(line) - 1
+            end_of_molecule_index = split_file_by_line.index(line) - 2 
             break
         elif re.search("Variables:", line):
             end_of_molecule_index = split_file_by_line.index(line)
             break
     ## this is the line where the free energies start to be listed, so we want to document this index
     input_molecule= split_file_by_line[beginning_of_molecule_index:end_of_molecule_index]
+    
     molecule_length=len(input_molecule)
+    print(molecule_length)
+    
     ## grab all free energies that are printed
     return molecule_length
 
