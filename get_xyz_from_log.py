@@ -134,8 +134,7 @@ def get_molecule_length(args):
     input_molecule= split_file_by_line[beginning_of_molecule_index:end_of_molecule_index]
     
     molecule_length=len(input_molecule)
-    print(molecule_length)
-    
+
     ## grab all free energies that are printed
     return molecule_length
 
