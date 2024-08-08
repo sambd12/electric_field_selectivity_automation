@@ -123,16 +123,14 @@ def parse_filename_for_info(filename):
     reaction_pathway = filename_split[6]
     
     
-    if len(filename_split) == 10:
+    if len(filename_split) == 11:
         field_strength = filename_split[-2]
+    elif len(filename_split)== 10:
+        field_strength = filename_split[-2]
+    else:
+        field_strength = filename_split[-3]
         
-    if filename.__contains__('qst3') or filename.__contains__('ts'):
-        structure_type = 'transition state'
-        if len(filename_split) == 12:
-            field_strength = filename_split[-3]
-        elif len(filename_split) == 11:
-            field_strength = filename_split[-2]
-    elif filename.__contains__('reactant'):
+    if filename.__contains__('reactant'):
         structure_type = 'reactant'
         reaction_pathway = "N/A"
     elif filename.__contains__('product'):
