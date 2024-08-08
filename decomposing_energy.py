@@ -155,7 +155,7 @@ def parse_filename_for_info(filename):
         field_integer = int(field_direction + field_strength)
     elif field_strength.__contains__("pos"):
         field_strength = field_strength.split("s")[1]
-        field_integer = field_strength
+        field_integer = int(field_strength)
         
     filename_info = [density_functional, basis_set, solvent, reactant_conformer, structure_type, reaction_pathway, field_integer]
     return filename_info
