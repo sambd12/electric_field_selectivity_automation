@@ -37,5 +37,6 @@ def get_crossover_temp(h_bar_omega):
 def get_tunneling_information(frequency):
     tunneling_info=get_tunneling_coefficients(frequency)
     get_crossover_temp(tunneling_info[0])
+    return tunneling_info
     
     

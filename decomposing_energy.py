@@ -154,10 +154,10 @@ def write_energies_to_csv(tuple_of_energies, args):
     filename = args.filename[0]
     if filename.__contains__("_hr"):
         df = pd.DataFrame(tuple_of_energies, 
-                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.', 'Quasi-Rho G', 'Quasi-Harmonic G' ])
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.', 'Quasi-Rho G', 'Quasi-Harmonic G', 'Standard Wigner Tunneling Coeff', "Truncated Wigner Tunneling Coeff" ])
     elif filename.__contains__("_freq"):
         df = pd.DataFrame(tuple_of_energies, 
-                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Quasi-Rho G', 'Quasi-Harmonic G' ])
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Quasi-Rho G', 'Quasi-Harmonic G', 'Standard Wigner Tunneling Coeff', "Truncated Wigner Tunneling Coeff"])
     df.to_csv(csv_filename, index=False)
     
 def decompose_energy(args):
@@ -178,8 +178,10 @@ def decompose_energy(args):
             all_free_energies=get_free_energies(energy_breakdown_list)
             all_energies_by_filename = filename_info + all_free_energies + entropy_corrected_G
         first_freq=get_low_frequencies(filename)
-        get_tunneling_information(first_freq)
-        tuple_of_energies.append(all_energies_by_filename)
+        tunneling_info=get_tunneling_information(first_freq)
+        wigner_coeffs=tunneling_info[1:]
+        all_info_by_filename = all_energies_by_filename + wigner_coeffs
+        tuple_of_energies.append(all_info_by_filename)
         
     return tuple_of_energies
         

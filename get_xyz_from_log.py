@@ -346,8 +346,6 @@ def log_to_xyz(args):
           get_z_dipole(args)
           get_z_polar(args)
           decompose_energy(args)
-          
-          
     return xyz_filename
 
 def main():
