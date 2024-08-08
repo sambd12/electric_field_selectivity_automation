@@ -120,12 +120,10 @@ def parse_filename_for_info(filename):
     density_functional = filename_split[3]
     basis_set = filename_split[4]
     solvent = filename_split[5]
-    reaction_pathway = filename_split[6]
     
     
-    if len(filename_split) == 11:
-        field_strength = filename_split[-2]
-    elif len(filename_split)== 10:
+    
+    if len(filename_split) == 11 or len(filename_split)== 10:
         field_strength = filename_split[-2]
     else:
         field_strength = filename_split[-3]
@@ -136,9 +134,15 @@ def parse_filename_for_info(filename):
     elif filename.__contains__('product'):
         structure_type = "product"
         reactant_conformer = "N/A"
+        reaction_pathway = filename_split[6]
     elif filename.__contains__('epoxide'):
         structure_type ='epoxide'
         reactant_conformer = "N/A"
+        reaction_pathway = filename_split[6]
+    elif filename.__contains__('qst3') or filename.__contains__('ts'):
+        structure_type ='transition state'
+        reaction_pathway = filename_split[6]
+        
 
     if filename.__contains__("longarm"):
         reactant_conformer = "long arm"
