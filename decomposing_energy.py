@@ -146,22 +146,37 @@ def parse_filename_for_info(filename):
         reactant_conformer = "long arm"
     elif filename.__contains__("shortarm"):
         reactant_conformer = "short arm"
-    filename_info = [density_functional, basis_set, solvent, reactant_conformer, structure_type, reaction_pathway, field_strength]
+        
+    if field_strength == "nofield":
+        field_integer = 0
+    elif field_strength.__contains__("neg"):
+        field_direction = "-"
+        field_strength = field_strength.split("g")[1]
+        field_integer = int(field_direction + field_strength)
+    elif field_strength.__contains__("pos"):
+        field_strength = field_strength.split("s")[1]
+        field_integer = field_strength
+        
+    filename_info = [density_functional, basis_set, solvent, reactant_conformer, structure_type, reaction_pathway, field_integer]
     return filename_info
 
-def write_energies_to_csv(tuple_of_energies, args):
+def write_energies_to_csv(info_by_file, args):
     csv_filename = args.spreadsheet[0]
     filename = args.filename[0]
+    
+    files_by_field_strength = sorted(info_by_file)
+    sorted_files = [info_by_file[key] for key in files_by_field_strength]
+    
     if filename.__contains__("_hr"):
-        df = pd.DataFrame(tuple_of_energies, 
+        df = pd.DataFrame(sorted_files, 
                  columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.', 'Quasi-Rho G', 'Quasi-Harmonic G', 'Standard Wigner Tunneling Coeff', "Truncated Wigner Tunneling Coeff" ])
     elif filename.__contains__("_freq"):
-        df = pd.DataFrame(tuple_of_energies, 
+        df = pd.DataFrame(sorted_files, 
                  columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Quasi-Rho G', 'Quasi-Harmonic G', 'Standard Wigner Tunneling Coeff', "Truncated Wigner Tunneling Coeff"])
     df.to_csv(csv_filename, index=False)
     
 def decompose_energy(args):
-    tuple_of_energies = []
+    info_by_file = dict()
     ## each file and its energies will go into this list 
     for f in range(len(args.filename)):
         filename = args.filename[f]
@@ -169,6 +184,8 @@ def decompose_energy(args):
         energy_breakdown_list=get_energy_breakdown(filename)
         entropy_corrected_G = get_entropy_corrected_G(filename, temperature=None, w0=100.)
         filename_info=parse_filename_for_info(filename)
+        field_strength=filename_info[-1]
+        
         if filename.__contains__("_hr"):
             all_free_energies=get_free_energies(energy_breakdown_list)
             free_energy_kJ = all_free_energies[-1]
@@ -181,9 +198,10 @@ def decompose_energy(args):
         tunneling_info=get_tunneling_information(first_freq)
         wigner_coeffs=tunneling_info[1:]
         all_info_by_filename = all_energies_by_filename + wigner_coeffs
-        tuple_of_energies.append(all_info_by_filename)
         
-    return tuple_of_energies
+        info_by_file[field_strength] = all_info_by_filename
+ 
+    return info_by_file
         
 def main():
     args=get_arguments()
