@@ -121,9 +121,9 @@ def parse_filename_for_info(filename):
     basis_set = filename_split[4]
     solvent = filename_split[5]
     reaction_pathway = filename_split[6]
-    if len(filename_split) == 11:
-        field_strength = filename_split[-3]
-    elif len(filename_split) == 10:
+    
+    
+    if len(filename_split) == 10:
         field_strength = filename_split[-2]
         
     if filename.__contains__('qst3') or filename.__contains__('ts'):
@@ -185,7 +185,6 @@ def decompose_energy(args):
         entropy_corrected_G = get_entropy_corrected_G(filename, temperature=None, w0=100.)
         filename_info=parse_filename_for_info(filename)
         field_strength=filename_info[-1]
-        
         if filename.__contains__("_hr"):
             all_free_energies=get_free_energies(energy_breakdown_list)
             free_energy_kJ = all_free_energies[-1]
@@ -198,16 +197,15 @@ def decompose_energy(args):
         tunneling_info=get_tunneling_information(first_freq)
         wigner_coeffs=tunneling_info[1:]
         all_info_by_filename = all_energies_by_filename + wigner_coeffs
-        
         info_by_file[field_strength] = all_info_by_filename
  
     return info_by_file
         
 def main():
     args=get_arguments()
-    tuple_of_energies=decompose_energy(args)
+    dictionary_of_info=decompose_energy(args)
     if args.spreadsheet != None:
-        write_energies_to_csv(tuple_of_energies, args)
+        write_energies_to_csv(dictionary_of_info, args)
 
 if __name__ == "__main__":
     main()
