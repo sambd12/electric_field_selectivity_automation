@@ -76,7 +76,7 @@ def get_free_energies(energy_breakdown_list):
     print("Thermal Energy:", thermal_energy, "kJ/mol")
     print("-T\u0394S=", minus_temp_delta_s, "kJ/mol")
     print("Free Energy:", free_energy_kJ, "kJ/mol")
-    all_free_energies = [zero_pt_kJ, electronic_energy, thermal_energy, minus_temp_delta_s, free_energy_kJ]
+    all_free_energies = [zero_pt_kJ, thermal_energy, minus_temp_delta_s, electronic_energy, free_energy_kJ]
     return all_free_energies
     
     
@@ -151,8 +151,13 @@ def parse_filename_for_info(filename):
 
 def write_energies_to_csv(tuple_of_energies, args):
     csv_filename = args.spreadsheet[0]
-    df = pd.DataFrame(tuple_of_energies, 
-                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Electronic Energy', 'Thermal Energy', 'minusT Delta S', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.', 'Quasi-Rho G', 'Quasi-Harmonic G' ])
+    filename = args.filename[0]
+    if filename.__contains__("_hr"):
+        df = pd.DataFrame(tuple_of_energies, 
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.', 'Quasi-Rho G', 'Quasi-Harmonic G' ])
+    elif filename.__contains__("_freq"):
+        df = pd.DataFrame(tuple_of_energies, 
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Quasi-Rho G', 'Quasi-Harmonic G' ])
     df.to_csv(csv_filename, index=False)
     
 def decompose_energy(args):
@@ -163,18 +168,19 @@ def decompose_energy(args):
         print("\nEnergies for", filename)
         energy_breakdown_list=get_energy_breakdown(filename)
         entropy_corrected_G = get_entropy_corrected_G(filename, temperature=None, w0=100.)
+        filename_info=parse_filename_for_info(filename)
         if filename.__contains__("_hr"):
             all_free_energies=get_free_energies(energy_breakdown_list)
             free_energy_kJ = all_free_energies[-1]
             internal_rotation_corrections=get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ)
+            all_energies_by_filename = filename_info + all_free_energies + internal_rotation_corrections +  entropy_corrected_G
         elif filename.__contains__("_freq"):
             all_free_energies=get_free_energies(energy_breakdown_list)
-            internal_rotation_corrections=["N/A", "N/A"]
+            all_energies_by_filename = filename_info + all_free_energies + entropy_corrected_G
         first_freq=get_low_frequencies(filename)
         get_tunneling_information(first_freq)
-        filename_info=parse_filename_for_info(filename)
-        all_energies_by_filename = filename_info + all_free_energies + internal_rotation_corrections + entropy_corrected_G
         tuple_of_energies.append(all_energies_by_filename)
+        
     return tuple_of_energies
         
 def main():

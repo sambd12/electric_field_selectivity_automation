@@ -22,7 +22,7 @@ def get_entropy_corrected_G(filename, temperature=None, w0=100.):
     quasi_harmonic_G = (nrg + qharm_dG) * 2625.5
     
     print("Quasi-Rho G:", quasi_rrho_G)
-    print("Quasi-Harmonic G", quasi_harmonic_G)
+    print("Quasi-Harmonic G:", quasi_harmonic_G)
     
     entropy_corrected_G = [quasi_rrho_G, quasi_harmonic_G]
     
