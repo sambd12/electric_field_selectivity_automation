@@ -164,7 +164,7 @@ def write_energies_to_csv(info_by_file, args):
     csv_filename = args.spreadsheet[0]
     filename = args.filename[0]
     
-    files_by_field_strength = sorted(info_by_file)
+    files_by_field_strength = sorted(info_by_file, reverse=True)
     sorted_files = [info_by_file[key] for key in files_by_field_strength]
     
     if filename.__contains__("_hr"):
