@@ -9,7 +9,7 @@ Created on Tue Jan 23 16:57:36 2024
 import re
 import argparse
 from decomposing_energy import decompose_energy
-from get_tunneling_info import get_tunneling_information
+
 
 def get_arguments():
     parser=argparse.ArgumentParser()
@@ -279,19 +279,7 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
     print("Structure coordinates:", xyz_filename)
     with open(xyz_filename, 'w') as f:
         f.write(file_xyzstring)
-        
-def get_low_frequencies(args):
-    filename=args.filename[0]
-    string_to_match="Low frequencies"
-    matches = []
-    with open(filename) as f:
-    	for line in f:
-    		if re.search(string_to_match, line):
-    			matches.append(line)
-    print(matches[0],matches[1])
-    split_frequencies=matches[0].split()
-    first_frequency=abs(float(split_frequencies[3]))
-    return first_frequency
+    
         
         
 def get_z_dipole(args):
@@ -358,8 +346,7 @@ def log_to_xyz(args):
           get_z_dipole(args)
           get_z_polar(args)
           decompose_energy(args)
-          first_freq=get_low_frequencies(args)
-          get_tunneling_information(first_freq)
+          
           
     return xyz_filename
 

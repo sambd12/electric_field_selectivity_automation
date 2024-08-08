@@ -11,6 +11,7 @@ import argparse
 import sys
 import pandas as pd
 from corrected_free_energy import get_entropy_corrected_G
+from get_tunneling_info import get_tunneling_information
 
 sys.getdefaultencoding()
 
@@ -101,6 +102,18 @@ def get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ):
     internal_rotation_corrections = [total_free_energy, internal_rot_correction_kJ]
     return internal_rotation_corrections
 
+def get_low_frequencies(filename):
+    string_to_match="Low frequencies"
+    matches = []
+    with open(filename) as f:
+    	for line in f:
+    		if re.search(string_to_match, line):
+    			matches.append(line)
+    print(matches[0],matches[1])
+    split_frequencies=matches[0].split()
+    first_frequency=abs(float(split_frequencies[3]))
+    return first_frequency
+
 def parse_filename_for_info(filename):
     filename_info = []
     filename_split = filename.split("_")
@@ -157,6 +170,8 @@ def decompose_energy(args):
         elif filename.__contains__("_freq"):
             all_free_energies=get_free_energies(energy_breakdown_list)
             internal_rotation_corrections=["N/A", "N/A"]
+        first_freq=get_low_frequencies(filename)
+        get_tunneling_information(first_freq)
         filename_info=parse_filename_for_info(filename)
         all_energies_by_filename = filename_info + all_free_energies + internal_rotation_corrections + entropy_corrected_G
         tuple_of_energies.append(all_energies_by_filename)
