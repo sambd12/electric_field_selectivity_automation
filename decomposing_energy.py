@@ -107,7 +107,7 @@ def get_low_frequencies(filename):
     matches = []
     with open(filename) as f:
     	for line in f:
-    		if re.search(string_to_match, line):
+    		if re.search(string_to_match, line) and "Full mass-weighted force constant matrix" not in line:
     			matches.append(line)
     print(matches[0],matches[1])
     split_frequencies=matches[0].split()
