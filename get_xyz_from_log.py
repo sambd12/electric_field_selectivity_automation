@@ -176,7 +176,9 @@ def get_index_of_lowest_energy(args, hybrid_status):
         with open(filename) as f:
         	for line in f:
         		if re.search(string_to_match, line):
-        			matches.append(line)			
+        			matches.append(line)       
+        if len(matches) <= 5:
+            print("Warning! Gaussian completed less than 5 cycles before erroring!")
         just_energies=()
         for line in matches:
             each_line=line.split()
@@ -196,6 +198,8 @@ def get_index_of_lowest_energy(args, hybrid_status):
             for line in f:
             	if re.search(string_to_match, line) and re.search("E2", line):
             			matches.append(line)
+        if len(matches) <= 5:
+            print("Warning! Gaussian completed less than 5 cycles before erroring!")
         just_energies=()
         ## first line comes from the input of the file, need to delete that one
         for line in matches:
