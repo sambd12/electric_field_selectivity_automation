@@ -128,7 +128,7 @@ def get_molecule_length(args):
             end_of_molecule_index = split_file_by_line.index(line) - 1 
             break
         elif re.search(" The following ModRedundant input section has been read:", line):
-            end_of_molecule_index = split_file_by_line.index(line) - 2 
+            end_of_molecule_index = split_file_by_line.index(line) - 1 
             break
         elif re.search("Variables:", line):
             end_of_molecule_index = split_file_by_line.index(line)
