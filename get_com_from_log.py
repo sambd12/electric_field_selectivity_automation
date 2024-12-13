@@ -41,7 +41,7 @@ def get_arguments():
     # can't have just frequency and hindered rotor
     group2 = parser.add_mutually_exclusive_group(required=False)
     
-    group2.add_argument("-f", "--freq", action="store_true")
+    group2.add_argument("-nf", "--nofreq", action="store_false")
     group2.add_argument("-hr", "--hindered_rotor", action="store_true")
 
     args=parser.parse_args()
@@ -145,11 +145,11 @@ def get_basis_set(args, options, filename_options):
     return(options, filename_options)
 
 def get_frequency(args, options, filename_options):
-    if args.freq == True:
+    if args.nofreq == True:
         options['frequency'] = "Freq"
         options['hindered_rotor'] = ""
         filename_options['frequency'] = "_freq"
-    elif args.freq == False and args.hindered_rotor == False:
+    elif args.nofreq == False and args.hindered_rotor == False:
         options['frequency'] = ""
         options['hindered_rotor'] = ""
         filename_options['frequency'] = ""
