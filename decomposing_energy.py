@@ -142,8 +142,16 @@ def parse_filename_for_info(filename):
         reaction_pathway = filename_split[6]
         
 
-    if filename.__contains__("longarm"):
+    if filename.__contains__("longarm1"):
+        reactant_conformer = "long arm1"
+    elif filename.__contains__("longarm2"):
+        reactant_conformer = "long arm2"
+    elif filename.__contains__("longarm"):
         reactant_conformer = "long arm"
+    elif filename.__contains__("shortarm1"):
+        reactant_conformer = "short arm1"
+    elif filename.__contains__("shortarm2"):
+        reactant_conformer = "short arm2"
     elif filename.__contains__("shortarm"):
         reactant_conformer = "short arm"
         

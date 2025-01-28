@@ -42,6 +42,7 @@ def get_arguments():
     group2 = parser.add_mutually_exclusive_group(required=False)
     
     group2.add_argument("-nf", "--nofreq", action="store_false")
+    # make frequency the default, so you can do -nf to take away frequency
     group2.add_argument("-hr", "--hindered_rotor", action="store_true")
 
     args=parser.parse_args()
@@ -220,8 +221,18 @@ def get_dotcom_filename(args, options, filename_options):
     else:
         filename_options['enantiomer'] = ""
         
-    if filename.__contains__("_longarm_"):
-        filename_options['reactant_type'] = "_longarm"
+    if filename.__contains__("_longarm1_"):
+        filename_options['reactant_type'] = "_longarm1"
+    elif filename.__contains__("_longarm2_"):
+        filename_options['reactant_type'] = "_longarm2"
+    elif filename.__contains__("_longarm_"):
+        filename_options['reactant_type'] = "_longarm"    
+    elif filename.__contains__("_shortarm_"):
+        filename_options['reactant_type'] = "_shortarm"
+    elif filename.__contains__("_shortarm1_"):
+        filename_options['reactant_type'] = "_shortarm1"
+    elif filename.__contains__("_shortarm2_"):
+        filename_options['reactant_type'] = "_shortarm2"
     elif filename.__contains__("_shortarm_"):
         filename_options['reactant_type'] = "_shortarm"
     else:

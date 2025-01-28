@@ -9,6 +9,7 @@ Created on Tue Jan 23 16:57:36 2024
 import re
 import argparse
 from decomposing_energy import decompose_energy
+from openbabel import pybel
 
 
 def get_arguments():
@@ -272,7 +273,6 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
             each_line[0] = "P"
        elif each_line[0] == "17":
            each_line[0] = "Cl"
-       
 #put the atoms back together, adding each atom line as a string to a tuple
        each_line=" ".join(each_line)
        clean_file= clean_file + (each_line,)
@@ -287,8 +287,6 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
     with open(xyz_filename, 'w') as f:
         f.write(file_xyzstring)
     
-        
-        
 def get_z_dipole(args):
     filename=args.filename[0]
     with open (filename, 'r') as f:
@@ -355,11 +353,65 @@ def log_to_xyz(args):
           decompose_energy(args)
     return xyz_filename
 
+def com_to_xyz(args):
+    filename=args.filename[0]
+    name=args.filename[0].split('.')[0] 
+    xyz_filename = name + '_structurefromcom.xyz'
+    
+    with open (filename, 'r') as f:
+        file_string=f.read()
+    split_file_by_line = file_string.split("\n")
+    del split_file_by_line[0:7]
+    del split_file_by_line[-1]
+    
+    zmatrix_syntax=['!Put Keywords Here, check Charge and Multiplicity.', "#", "", "Comment goes here", "" ]
+    
+    zmatrix = False
+    for line in split_file_by_line:
+        if re.search("Variables:", line):
+            zmatrix = True
+            break
+
+    if "qst3" not in filename and zmatrix == False:
+        del split_file_by_line[-1]
+        del split_file_by_line[0]
+        num_atoms = (len(split_file_by_line))
+        xyz_syntax = [str(num_atoms), '']
+        split_file_by_line = xyz_syntax + split_file_by_line
+        molecule_xyz="\n".join(split_file_by_line)
+        print("Structure coordinates:", xyz_filename)
+        with open(xyz_filename, 'w') as f:
+            f.write(molecule_xyz)
+
+    elif "qst3" not in filename and zmatrix == True:
+        split_file_by_line = zmatrix_syntax + split_file_by_line
+        file_string="\n".join(split_file_by_line)
+        molecule = pybel.readstring("gzmat", file_string)
+        molecule_xyz = molecule.write(format="xyz")
+        molecule_xyz = molecule_xyz.split("\n")
+        del molecule_xyz[-1]
+        molecule_xyz = "\n".join(molecule_xyz)
+        file_xyzstring=str(molecule_xyz)
+        print("Structure coordinates:", xyz_filename)
+        with open(xyz_filename, 'w') as f:
+            f.write(file_xyzstring)
+        
+   # elif filename.__contains__("qst3") and zmatrix == False:
+        
+    #elif filename.__contains__("qst3") and zmatrix == True:
+        
+    
 def main():
     args=get_arguments()
+    filename=args.filename[0]
     #notation for getting one specific argument is args.argument/option
     #determine how to proceed, get the appropriate name, and the density functional
-    log_to_xyz(args)
+    if filename.__contains__(".log"):
+        log_to_xyz(args)
+    elif filename.__contains__(".com"):
+        com_to_xyz(args)
+    else:
+        print("invalid filetype. Please submit a .log or .com")
           
 if __name__ == "__main__":
     main()
