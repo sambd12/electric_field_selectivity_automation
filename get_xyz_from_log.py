@@ -374,11 +374,15 @@ def com_to_xyz(args):
 
     if "qst3" not in filename and zmatrix == False:
         del split_file_by_line[-1]
-        del split_file_by_line[0]
-        num_atoms = (len(split_file_by_line))
+        atoms=[]
+        for line in split_file_by_line:
+            each_line=line.split()
+            if len(each_line) == 4:
+                atoms.append(line)
+        num_atoms = (len(atoms))
         xyz_syntax = [str(num_atoms), '']
-        split_file_by_line = xyz_syntax + split_file_by_line
-        molecule_xyz="\n".join(split_file_by_line)
+        atoms = xyz_syntax + atoms
+        molecule_xyz="\n".join(atoms)
         print("Structure coordinates:", xyz_filename)
         with open(xyz_filename, 'w') as f:
             f.write(molecule_xyz)
