@@ -330,6 +330,106 @@ def get_z_polar(args):
     zz_polar=zz_polar_decimal*10**(zz_polar_scalar)
 #get the dpiole moment out of scientific notation by multiplying the value by 10^ scalar
     print("The zz polarizability is", zz_polar, 'atomic units.')
+    
+    
+def change_file_format(args, zmatrix):
+    filename=args.filename[0]
+    name=args.filename[0].split('.')[0] 
+    xyz_filename = name + '_structurefromcom.xyz'
+    
+    zmatrix_syntax=['!Put Keywords Here, check Charge and Multiplicity.', "#", "", "Comment goes here", "" ]
+    
+    with open (filename, 'r') as f:
+        file_string=f.read()
+    split_file_by_line = file_string.split("\n")
+    del split_file_by_line[0:7]
+    del split_file_by_line[-1]
+    
+    
+    if "qst3" not in filename and zmatrix == False:
+        if zmatrix == False:
+             del split_file_by_line[-1]
+             atoms=[]
+             for line in split_file_by_line:
+                 each_line=line.split()
+                 if len(each_line) == 4:
+                     atoms.append(line)
+             num_atoms = (len(atoms))
+             xyz_syntax = [str(num_atoms), '']
+             atoms = xyz_syntax + atoms
+             
+        elif zmatrix == True:
+             split_file_by_line = zmatrix_syntax + split_file_by_line
+             file_string="\n".join(split_file_by_line)
+             molecule = pybel.readstring("gzmat", file_string)
+             molecule_xyz = molecule.write(format="xyz")
+             atoms = molecule_xyz.split("\n")
+             del atoms[-1]
+             
+        molecule_xyz = "\n".join(atoms)
+        file_xyzstring=str(molecule_xyz)
+        print("Structure coordinates:", xyz_filename)
+        with open(xyz_filename, 'w') as f:
+            f.write(file_xyzstring)
+         
+    elif filename.__contains__("qst3"):
+        if zmatrix == False:
+            del split_file_by_line[-1]
+            atoms=[]
+            for line in split_file_by_line:
+                each_line=line.split()
+                if len(each_line) == 4:
+                    atoms.append(line)
+            each_atom = int(len(atoms)/3)
+            xyz_syntax = [str(each_atom), '']
+            reactant = atoms[:each_atom]
+            product = atoms[each_atom:each_atom*2]
+            ts = atoms[each_atom*2:]
+         
+        elif zmatrix == True:
+            for line in split_file_by_line:
+                if line.__contains__("Product"):
+                    product_start = split_file_by_line.index(line)
+                if line.__contains__("Saddle Point Guess"):
+                    TS_start = split_file_by_line.index(line)
+                    
+            reactant=['0 1'] + split_file_by_line[:product_start-1]
+            product=split_file_by_line[product_start+2:TS_start-1]
+            ts=split_file_by_line[TS_start+2:-1]
+        
+        #put molecules into a list
+        molecule_list = [reactant, product, ts]
+        name = filename.split('.')[0]
+        name = name.split('_')
+        
+        #change molecule names
+        
+        reactant_name = name[:2] + ["reactant"] + name[3:6] + name[7:]
+        reactant_name = "_".join(reactant_name) + '_structurefromcom.xyz'
+        
+        product_name = name[:2] + ["product"] + name[3:8] + name[9:]
+        product_name = "_".join(product_name) + '_structurefromcom.xyz'
+
+        qst3_name = "_".join(name) + '_structurefromcom.xyz'
+
+        molecule_names = [reactant_name, product_name, qst3_name]
+        for i, mol in enumerate(molecule_list):
+            if zmatrix == False:
+                mol = xyz_syntax + mol
+                molecule_xyz="\n".join(mol)
+            elif zmatrix == True:
+                mol = zmatrix_syntax + mol
+                mol_string="\n".join(mol)
+                molecule = pybel.readstring("gzmat", mol_string)
+                molecule_xyz = molecule.write(format="xyz")
+                molecule_xyz = molecule_xyz.split("\n")
+                del molecule_xyz[-1]
+                molecule_xyz = "\n".join(molecule_xyz)
+            file_xyzstring=str(molecule_xyz)
+            print("Structure coordinates:", molecule_names[i])
+            with open(molecule_names[i], 'w') as f:
+                f.write(file_xyzstring)
+        
 
 def log_to_xyz(args):
     termination_status=get_termination_status(args)
@@ -352,57 +452,22 @@ def log_to_xyz(args):
           get_z_polar(args)
           decompose_energy(args)
     return xyz_filename
+     
 
 def com_to_xyz(args):
     filename=args.filename[0]
-    name=args.filename[0].split('.')[0] 
-    xyz_filename = name + '_structurefromcom.xyz'
     
     with open (filename, 'r') as f:
         file_string=f.read()
     split_file_by_line = file_string.split("\n")
-    del split_file_by_line[0:7]
-    del split_file_by_line[-1]
-    
-    zmatrix_syntax=['!Put Keywords Here, check Charge and Multiplicity.', "#", "", "Comment goes here", "" ]
     
     zmatrix = False
     for line in split_file_by_line:
         if re.search("Variables:", line):
             zmatrix = True
             break
-
-    if "qst3" not in filename and zmatrix == False:
-        del split_file_by_line[-1]
-        atoms=[]
-        for line in split_file_by_line:
-            each_line=line.split()
-            if len(each_line) == 4:
-                atoms.append(line)
-        num_atoms = (len(atoms))
-        xyz_syntax = [str(num_atoms), '']
-        atoms = xyz_syntax + atoms
-        molecule_xyz="\n".join(atoms)
-        print("Structure coordinates:", xyz_filename)
-        with open(xyz_filename, 'w') as f:
-            f.write(molecule_xyz)
-
-    elif "qst3" not in filename and zmatrix == True:
-        split_file_by_line = zmatrix_syntax + split_file_by_line
-        file_string="\n".join(split_file_by_line)
-        molecule = pybel.readstring("gzmat", file_string)
-        molecule_xyz = molecule.write(format="xyz")
-        molecule_xyz = molecule_xyz.split("\n")
-        del molecule_xyz[-1]
-        molecule_xyz = "\n".join(molecule_xyz)
-        file_xyzstring=str(molecule_xyz)
-        print("Structure coordinates:", xyz_filename)
-        with open(xyz_filename, 'w') as f:
-            f.write(file_xyzstring)
         
-   # elif filename.__contains__("qst3") and zmatrix == False:
-        
-    #elif filename.__contains__("qst3") and zmatrix == True:
+    change_file_format(args, zmatrix)
         
     
 def main():
