@@ -12,6 +12,7 @@ import sys
 import pandas as pd
 from corrected_free_energy import get_entropy_corrected_G
 from get_tunneling_info import get_tunneling_information
+from get_internal_energy import get_energy_of_last_structure
 
 sys.getdefaultencoding()
 
@@ -24,6 +25,50 @@ def get_arguments():
     parser.add_argument("-s", "--spreadsheet", nargs=1, action='store')
     args=parser.parse_args()
     return args
+
+def get_z_dipole(filename):
+    with open (filename, 'r') as f:
+        file_string=f.read()
+    split_file_by_line=file_string.split("\n")
+    electric_dipole_line_index=split_file_by_line.index(" Electric dipole moment (dipole orientation):")
+# find the chunk of dipoles in dipole orientation
+    z_dipole_line_index=electric_dipole_line_index+6
+    z_dipole_line=split_file_by_line[z_dipole_line_index]
+# find the line containing only the z dipole
+    z_dipole_line_split=z_dipole_line.split(" ")
+# line contains z and values with different unit systems, divide that line so each value is in its own index
+    z_dipole_scientific=z_dipole_line_split[13]
+# grab the dipole moment in atomic units
+    z_dipole_scientific_split=z_dipole_scientific.split("D+0")
+# divide up the scientific notation into the value and the scalar
+    z_dipole_decimal=float(z_dipole_scientific_split[0])
+    z_dipole_scalar=float(z_dipole_scientific_split[1])
+    z_dipole=z_dipole_decimal*10**(z_dipole_scalar)
+# get the dipole moment out of scientific notation by multiplying the value by 10^ scalar
+    print("The z dipole moment is", z_dipole, 'atomic units.')
+    return z_dipole
+    
+def get_z_polar(filename):
+    with open (filename, 'r') as f:
+        file_string=f.read()
+    split_file_by_line=file_string.split("\n")
+    electric_polar_line_index=split_file_by_line.index(" Dipole polarizability, Alpha (dipole orientation).")
+# find the chunk of polarizabilities in dipole orientation
+    zz_polarizability_line_index=electric_polar_line_index+11
+    zz_polarizability_line=split_file_by_line[zz_polarizability_line_index]
+# find the line containing only the zz polarizability in dipole orientation
+    zz_polarizability_line_split=zz_polarizability_line.split(" ")
+# line contains zz and values with different unit systems, divided it so each is in its own index
+    zz_polar_scientific=zz_polarizability_line_split[12]
+#grab the zz polarizability in atomic units
+    zz_polar_scientific_split=zz_polar_scientific.split("D+0")
+#divide up the scientific notation its the value and the scalar
+    zz_polar_decimal=float(zz_polar_scientific_split[0])
+    zz_polar_scalar=float(zz_polar_scientific_split[1])
+    zz_polar=zz_polar_decimal*10**(zz_polar_scalar)
+#get the dpiole moment out of scientific notation by multiplying the value by 10^ scalar
+    print("The zz polarizability is", zz_polar, 'atomic units.')
+    return zz_polar
 
 def get_energy_breakdown(filename):
     with open (filename, 'r') as f:
@@ -71,13 +116,14 @@ def get_free_energies(energy_breakdown_list):
     thermal_energy = electronic_thermal_kJ - electronic_zeropt_kJ
     electronic_energy = electronic_zeropt_kJ - zero_pt_kJ
     
+    print("Free Energy:", free_energy_kJ, "kJ/mol")
     print("Zero-point correction:", zero_pt_kJ, "kJ/mol")
     print("Electronic Energy:", electronic_energy, "kJ/mol")
     print("Thermal Energy:", thermal_energy, "kJ/mol")
     print("-T\u0394S=", minus_temp_delta_s, "kJ/mol")
-    print("Free Energy:", free_energy_kJ, "kJ/mol")
-    all_free_energies = [zero_pt_kJ, thermal_energy, minus_temp_delta_s, electronic_energy, free_energy_kJ]
-    return all_free_energies
+    
+    free_E_breakdown = [zero_pt_kJ, electronic_energy, thermal_energy, minus_temp_delta_s]
+    return free_energy_kJ, free_E_breakdown
     
     
 def get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ):
@@ -117,29 +163,17 @@ def get_low_frequencies(filename):
 def parse_filename_for_info(filename):
     filename_info = []
     filename_split = filename.split("_")
+    
+    structure_type = filename_split[2]
     density_functional = filename_split[3]
     basis_set = filename_split[4]
     solvent = filename_split[5]
+    reaction_pathway = filename_split[6]
 
-    if len(filename_split) == 11 or len(filename_split)== 10:
-        field_strength = filename_split[-2]
+    if len(filename_split) <= 10:
+        field_strength = filename_split[8]
     else:
-        field_strength = filename_split[-3]
-        
-    if filename.__contains__('reactant'):
-        structure_type = 'reactant'
-        reaction_pathway = "N/A"
-    elif filename.__contains__('product'):
-        structure_type = "product"
-        reactant_conformer = "N/A"
-        reaction_pathway = filename_split[6]
-    elif filename.__contains__('epoxide'):
-        structure_type ='epoxide'
-        reactant_conformer = "N/A"
-        reaction_pathway = filename_split[6]
-    elif filename.__contains__('qst3') or filename.__contains__('ts'):
-        structure_type ='transition state'
-        reaction_pathway = filename_split[6]
+        field_strength = filename_split[9]
         
 
     if filename.__contains__("longarm1"):
@@ -177,10 +211,10 @@ def write_energies_to_csv(info_by_file, args):
     
     if filename.__contains__("_hr"):
         df = pd.DataFrame(sorted_files, 
-                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.', 'Quasi-Rho G', 'Quasi-Harmonic G', 'Standard Wigner Tunneling Coeff', "Truncated Wigner Tunneling Coeff" ])
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength','Internal Energy','Free Energy','Free Energy Corrected by Int. Rot.', 'Correction by Int. Rot.','Quasi-Rho G','Quasi-Harmonic G','Zero-point correction','Electronic Energy','Thermal Energy','minusT Delta S', 'z dipole','zz polar', 'Standard Wigner Tunneling Coeff', "Truncated Wigner Tunneling Coeff" ])
     elif filename.__contains__("_freq"):
         df = pd.DataFrame(sorted_files, 
-                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength', 'Zero-point Correction', 'Thermal Energy', 'minusT Delta S', 'Electronic Energy', 'Free Energy', 'Quasi-Rho G', 'Quasi-Harmonic G', 'Standard Wigner Tunneling Coeff', "Truncated Wigner Tunneling Coeff"])
+                 columns=['Density Functional', 'Basis Set', 'Solvent', 'Reactant Conformer', 'Structure Type', 'Reaction Pathway', 'Field Strength','Internal Energy','Free Energy','Quasi-Rho G','Quasi-Harmonic G','Zero-point correction','Electronic Energy','Thermal Energy','minusT Delta S','z dipole','zz polar','Standard Wigner Tunneling Coeff', "Truncated Wigner Tunneling Coeff"])
     df.to_csv(csv_filename, index=False)
     
 def decompose_energy(args):
@@ -189,22 +223,44 @@ def decompose_energy(args):
     for f in range(len(args.filename)):
         filename = args.filename[f]
         print("\nEnergies for", filename)
+    
         energy_breakdown_list=get_energy_breakdown(filename)
-        entropy_corrected_G = get_entropy_corrected_G(filename, temperature=None, w0=100.)
+
         filename_info=parse_filename_for_info(filename)
         field_strength=filename_info[-1]
+        
+        if filename.__contains__("mn15"):
+           hybrid_status = False
+        elif filename.__contains__("b3lyp"):
+           hybrid_status = False
+        elif filename.__contains__("b2plyp"):
+            hybrid_status = True
+            
+        internal_energy = get_energy_of_last_structure(filename, hybrid_status)
+        free_energy_kJ, free_E_breakdown = get_free_energies(energy_breakdown_list)
+        
+        energies = [internal_energy, free_energy_kJ]
+        
+        
+        entropy_corrected_G = get_entropy_corrected_G(filename, temperature=None, w0=100.)
+        
+        dipole = get_z_dipole(filename)
+        polarizability = get_z_polar(filename)
+        properties = [dipole, polarizability]
+        
         if filename.__contains__("_hr"):
-            all_free_energies=get_free_energies(energy_breakdown_list)
-            free_energy_kJ = all_free_energies[-1]
-            internal_rotation_corrections=get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ)
-            all_energies_by_filename = filename_info + all_free_energies + internal_rotation_corrections +  entropy_corrected_G
+            
+            internal_rotation_corrections = get_internal_rotation_corrections(energy_breakdown_list, free_energy_kJ)
+            all_energies_by_filename = filename_info + energies + internal_rotation_corrections +  entropy_corrected_G + free_E_breakdown
+        
         elif filename.__contains__("_freq"):
-            all_free_energies=get_free_energies(energy_breakdown_list)
-            all_energies_by_filename = filename_info + all_free_energies + entropy_corrected_G
+            
+            all_energies_by_filename = filename_info + energies + entropy_corrected_G + free_E_breakdown
+        
         first_freq=get_low_frequencies(filename)
         tunneling_info=get_tunneling_information(first_freq)
         wigner_coeffs=tunneling_info[1:]
-        all_info_by_filename = all_energies_by_filename + wigner_coeffs
+        all_info_by_filename = all_energies_by_filename + properties + wigner_coeffs
         info_by_file[field_strength] = all_info_by_filename
  
     return info_by_file

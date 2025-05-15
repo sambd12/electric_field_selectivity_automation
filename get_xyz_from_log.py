@@ -8,7 +8,8 @@ Created on Tue Jan 23 16:57:36 2024
 
 import re
 import argparse
-from decomposing_energy import decompose_energy
+from decomposing_energy import decompose_energy, get_z_dipole, get_z_polar
+from get_internal_energy import get_energy_of_last_structure
 from openbabel import pybel
 
 
@@ -67,52 +68,6 @@ def get_freq_status(args):
     return freq_status
 
 #The following two functions are only for normal termination
-
-def get_energy_of_last_structure(args, hybrid_status):
-    #Find the lines that printed energies 
-    #Grab only the energy
-    #add all the energies as strings into a tuple  
-    #grab the last energy
-    #convert the energy to kJ/mol
-    filename=args.filename[0]
-    matches = []
-    if hybrid_status == False:
-        string_to_match = "SCF Done:"
-        with open(filename) as f:
-        	for line in f:
-        		if re.search(string_to_match, line):
-        			matches.append(line)			
-        just_energies=()
-        for line in matches:
-            each_line=line.split()
-            each_energy=float(each_line[4])
-            just_energies= just_energies + (each_energy,)
-        lowest_energy=just_energies[-1]
-        kilojoules_energy=(lowest_energy*2625.5)
-        print("\nInternal Energy:", kilojoules_energy, "kJ/mol")
-    if hybrid_status == True:
-        if filename.__contains__("b2plyp"):
-            string_to_match = "B2PLYP"
-        if filename.__contains__("b2plypd3"):
-            string_to_match = "B2PLYPD3"
-        with open(filename) as f:
-            for line in f:
-            	if re.search(string_to_match, line) and re.search("E2", line):
-            			matches.append(line)
-        just_energies=()
-        for line in matches:
-                each_line=line.split()
-                hartrees_scientific_energy=each_line[-1]
-                hartrees_scientific_split=hartrees_scientific_energy.split("D+0")
-            # divide up the scientific notation into the value and the scalar
-                hartrees_decimal=float(hartrees_scientific_split[0])
-                hartrees_scalar=float(hartrees_scientific_split[1])
-                hartrees=hartrees_decimal*10**(hartrees_scalar)
-            # multiply and add to the list of energies
-                just_energies= just_energies + (hartrees,)
-        lowest_energy=just_energies[-1]
-        kilojoules_energy=(lowest_energy*2625.5)
-        print("Internal Energy:", kilojoules_energy, "kJ/mol")
         
         
 def get_molecule_length(args):
@@ -287,50 +242,6 @@ def turn_coordinates_to_file(coordinates, xyz_filename):
     with open(xyz_filename, 'w') as f:
         f.write(file_xyzstring)
     
-def get_z_dipole(args):
-    filename=args.filename[0]
-    with open (filename, 'r') as f:
-        file_string=f.read()
-    split_file_by_line=file_string.split("\n")
-    electric_dipole_line_index=split_file_by_line.index(" Electric dipole moment (dipole orientation):")
-# find the chunk of dipoles in dipole orientation
-    z_dipole_line_index=electric_dipole_line_index+6
-    z_dipole_line=split_file_by_line[z_dipole_line_index]
-# find the line containing only the z dipole
-    z_dipole_line_split=z_dipole_line.split(" ")
-# line contains z and values with different unit systems, divide that line so each value is in its own index
-    z_dipole_scientific=z_dipole_line_split[13]
-# grab the dipole moment in atomic units
-    z_dipole_scientific_split=z_dipole_scientific.split("D+0")
-# divide up the scientific notation into the value and the scalar
-    z_dipole_decimal=float(z_dipole_scientific_split[0])
-    z_dipole_scalar=float(z_dipole_scientific_split[1])
-    z_dipole=z_dipole_decimal*10**(z_dipole_scalar)
-# get the dipole moment out of scientific notation by multiplying the value by 10^ scalar
-    print("The z dipole moment is", z_dipole, 'atomic units.')
-    
-def get_z_polar(args):
-    filename=args.filename[0]
-    with open (filename, 'r') as f:
-        file_string=f.read()
-    split_file_by_line=file_string.split("\n")
-    electric_polar_line_index=split_file_by_line.index(" Dipole polarizability, Alpha (dipole orientation).")
-# find the chunk of polarizabilities in dipole orientation
-    zz_polarizability_line_index=electric_polar_line_index+11
-    zz_polarizability_line=split_file_by_line[zz_polarizability_line_index]
-# find the line containing only the zz polarizability in dipole orientation
-    zz_polarizability_line_split=zz_polarizability_line.split(" ")
-# line contains zz and values with different unit systems, divided it so each is in its own index
-    zz_polar_scientific=zz_polarizability_line_split[12]
-#grab the zz polarizability in atomic units
-    zz_polar_scientific_split=zz_polar_scientific.split("D+0")
-#divide up the scientific notation its the value and the scalar
-    zz_polar_decimal=float(zz_polar_scientific_split[0])
-    zz_polar_scalar=float(zz_polar_scientific_split[1])
-    zz_polar=zz_polar_decimal*10**(zz_polar_scalar)
-#get the dpiole moment out of scientific notation by multiplying the value by 10^ scalar
-    print("The zz polarizability is", zz_polar, 'atomic units.')
-    
     
 def change_file_format(args, zmatrix):
     filename=args.filename[0]
@@ -432,13 +343,15 @@ def change_file_format(args, zmatrix):
         
 
 def log_to_xyz(args):
+    filename=args.filename[0]
     termination_status=get_termination_status(args)
     xyz_filename=get_xyz_filename(args, termination_status)
     hybrid_status=get_density_function(args)
     freq_status=get_freq_status(args)
     molecule_length=get_molecule_length(args)
+    
     if termination_status == "normal":
-        get_energy_of_last_structure(args, hybrid_status)
+        get_energy_of_last_structure(filename, hybrid_status)
         last_coordinates=get_last_coordinates(args, molecule_length)
         turn_coordinates_to_file(last_coordinates, xyz_filename)
     elif termination_status == "error_9999" or termination_status == "error_l103":
@@ -447,10 +360,10 @@ def log_to_xyz(args):
         turn_coordinates_to_file(lowest_energy_coordinates, xyz_filename)
     else:
         print("Unknown error or file is still running")
+        
     if termination_status == "normal" and freq_status == True:
-          get_z_dipole(args)
-          get_z_polar(args)
           decompose_energy(args)
+          
     return xyz_filename
      
 

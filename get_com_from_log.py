@@ -190,28 +190,39 @@ def get_dotcom_filename(args, options, filename_options):
             filename_options['molecule_type'] = "_product"
         elif filename.__contains__("reactant"):
             filename_options['molecule_type'] = "_reactant"
-        elif filename.__contains__("epoxide"):
-            filename_options['molecule_type'] = "_epoxide"
         else:
-            filename_options['molecule_type'] = "_other"
+            filename_options['molecule_type'] = "_min"
     elif args.qst3 == None and args.transition_state == True:
         filename_options['molecule_type'] = "_ts"
     elif args.qst3 != None:   
         filename_options['molecule_type'] = "_qst3"
    
     ## adds aldehyde and ketone to the name of the file
-    ## in the case of QST3 files, adds aldehyde and ketone to the file    
+    ## in the case of QST3 files, adds aldehyde and ketone to the file
+    
+    
+    if filename.__contains__("epoxide"):
+        filename_options['pathway'] = "_epoxide"
+        options['product_type'] = "Epoxide"   
+    # if it is the epoxide structure, the pathway is epoxide and is a reactant
+    
+    
+    # if it has epoxide and also contains arm, it is a transition state from epoxide to carb,
+    # so it is forming a carbocation and carbocation will be the pathway
+    if filename.__contains__("arm"):
+        filename_options['pathway'] = '_carbocation'
+        options['product_type'] = 'Carbocation'
+    # if it is just a carbocation, it will be called a carbocation
+    # if it contains an arm but also ket/ald, then it is a qst3, and ket/ald will be the pathway
     if filename.__contains__("ketone"):
         filename_options['pathway'] = "_ketone"
         options['product_type'] = "Ketone"
-    elif filename.__contains__("aldehyde"):
+    if filename.__contains__("aldehyde"):
         filename_options['pathway'] = "_aldehyde"
-        options['product_type'] = "Aldehyde"
-    elif filename.__contains__("epoxide"):
-        filename_options['pathway'] = "_epoxide"
-        options['product_type'] = "Epoxide"
+        options['product_type'] = "Aldehyde"    
+    
     else:
-        filename_options['pathway'] = ""
+        filename_options['pathway'] = "_nopath"
         options['product_type'] = "Other"
         
     if filename.__contains__("_s_"):
@@ -219,7 +230,7 @@ def get_dotcom_filename(args, options, filename_options):
     elif filename.__contains__("_r_"):
         filename_options['enantiomer'] = "_r"
     else:
-        filename_options['enantiomer'] = ""
+        filename_options['enantiomer'] = "unknownEnan"
         
     if filename.__contains__("_longarm1_"):
         filename_options['reactant_type'] = "_longarm1"
