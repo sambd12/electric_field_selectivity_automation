@@ -205,19 +205,17 @@ def get_dotcom_filename(args, options, filename_options):
         filename_options['pathway'] = "_epoxide"
         options['product_type'] = "Epoxide"   
     # if it is the epoxide structure, the pathway is epoxide and is a reactant
-    
-    
     # if it has epoxide and also contains arm, it is a transition state from epoxide to carb,
     # so it is forming a carbocation and carbocation will be the pathway
-    if filename.__contains__("arm"):
+    elif filename.__contains__("arm"):
         filename_options['pathway'] = '_carbocation'
         options['product_type'] = 'Carbocation'
     # if it is just a carbocation, it will be called a carbocation
     # if it contains an arm but also ket/ald, then it is a qst3, and ket/ald will be the pathway
-    if filename.__contains__("ketone"):
+    elif filename.__contains__("ketone"):
         filename_options['pathway'] = "_ketone"
         options['product_type'] = "Ketone"
-    if filename.__contains__("aldehyde"):
+    elif filename.__contains__("aldehyde"):
         filename_options['pathway'] = "_aldehyde"
         options['product_type'] = "Aldehyde"    
     
