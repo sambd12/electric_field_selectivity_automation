@@ -188,6 +188,8 @@ def parse_filename_for_info(filename):
         reactant_conformer = "short arm2"
     elif filename.__contains__("shortarm"):
         reactant_conformer = "short arm"
+    else: 
+        reactant_conformer = None
         
     if field_strength == "nofield":
         field_integer = 0
